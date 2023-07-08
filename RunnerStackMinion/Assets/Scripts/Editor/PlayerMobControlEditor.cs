@@ -20,7 +20,7 @@ public class PlayerMobControlEditor : Editor
         }
         if (GUILayout.Button("Add Mob"))
         {
-            playerMobControl.SpawnMob();
+            playerMobControl.SpawnMobAtPlayer();
         }
         if (GUILayout.Button("Remove Mob"))
         {

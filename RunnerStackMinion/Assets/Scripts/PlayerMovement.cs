@@ -14,6 +14,10 @@ public class PlayerMovement : Monotone<PlayerMovement>
     [Header("Refs")]
     [SerializeField] PlayerMobControl PlayerMobControl;
 
+    [Header("Debug")]
+    public bool Paused;
+
+
     Rigidbody _rigidbody;
     float _screenWidth;
     float _halfLevelWidth;
@@ -64,6 +68,13 @@ public class PlayerMovement : Monotone<PlayerMovement>
             _sideDelta = -LevelEdge - _rigidbody.position.x;
 
         float forwardDelta = Time.deltaTime * ForwardSpeed;
+
+        if (Paused)
+        {
+            forwardDelta = 0f;
+            _sideDelta = 0f;
+        }
+
         _rigidbody.MovePosition(_rigidbody.position + Vector3.right * _sideDelta + transform.forward * forwardDelta);
 
         PlayerMobControl.ApplyCohesionForce();
@@ -71,14 +82,4 @@ public class PlayerMovement : Monotone<PlayerMovement>
 
         _sideDelta = 0f;
     }
-
-    // void OnCollisionEnter(Collision collision)
-    // {
-    //     Debug.Log($"OnCollisionEnter {collision.collider.name}");
-    // }
-
-    // void OnCollisionExit(Collision collision)
-    // {
-    //     Debug.Log($"OnCollisionExit {collision.collider.name}");
-    // }
 }

@@ -54,7 +54,7 @@ MonoBehaviour:
   m_LookAt: {fileID: 0}
   m_Follow: {fileID: 0}
   m_Lens:
-    FieldOfView: 80
+    FieldOfView: 90
     OrthographicSize: 10
     NearClipPlane: 0.1
     FarClipPlane: 5000
@@ -83,7 +83,7 @@ GameObject:
   - component: {fileID: 4936129294028314893}
   - component: {fileID: 8040131372341563039}
   - component: {fileID: 7769576465367716541}
-  - component: {fileID: 1450150842830142508}
+  - component: {fileID: 4918117140589526492}
   m_Layer: 0
   m_Name: cm
   m_TagString: Untagged
@@ -131,8 +131,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Damping: {x: 0.1, y: 0.5, z: 0.3}
-  ShoulderOffset: {x: 0, y: 1.59, z: 0}
-  VerticalArmLength: 13
+  ShoulderOffset: {x: 0, y: 0, z: 0}
+  VerticalArmLength: 8
   CameraSide: 1
   CameraDistance: 8
   CameraCollisionFilter:
@@ -142,7 +142,7 @@ MonoBehaviour:
   CameraRadius: 0.264
   DampingIntoCollision: 0
   DampingFromCollision: 2
---- !u!114 &1450150842830142508
+--- !u!114 &4918117140589526492
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

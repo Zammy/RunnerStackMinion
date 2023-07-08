@@ -42,7 +42,11 @@ public class SimpleLevelGenerator : MonoBehaviour
 
         for (int i = 0; i < SegmentsToCreateAtStart; i++)
         {
-            SpawnSegment();
+            if (i < 2)
+                SpawnSegment(0);
+            else
+                SpawnSegment();
+
         }
 
         _spawnDistanceToMaintain = _spawnedUntil;
@@ -62,9 +66,10 @@ public class SimpleLevelGenerator : MonoBehaviour
         }
     }
 
-    void SpawnSegment()
+    void SpawnSegment(int segmentIndex = -1)
     {
-        int segmentIndex = PickSegmentToSpawn();
+        if (segmentIndex == -1)
+            segmentIndex = PickSegmentToSpawn();
         var segment = Segments[segmentIndex];
         var pos = transform.position;
         pos.z += _spawnedUntil;

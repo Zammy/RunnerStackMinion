@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
-public class PlayerMobControl : MonoBehaviour
+public class PlayerMobControl : Monotone<PlayerMobControl>
 {
     [Header("Settings")]
     [SerializeField] GameObject MobPrefab;
@@ -17,18 +17,20 @@ public class PlayerMobControl : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField] int SpawnOnStartup = 10;
-    [SerializeField] int _spawned;
+    public int Spawned;
 
     public List<Rigidbody> Mobs { get; set; }
 
-    void Awake()
+    protected override void Awake()
     {
+        base.Awake();
+
         Mobs = new List<Rigidbody>();
     }
 
     void Start()
     {
-        _spawned = 0;
+        Spawned = 0;
         Spawn();
     }
 
@@ -37,20 +39,24 @@ public class PlayerMobControl : MonoBehaviour
     {
         for (int i = 0; i < SpawnOnStartup; i++)
         {
-            SpawnMob();
+            SpawnMobAtPlayer();
         }
     }
 
-    public void SpawnMob()
+    public void SpawnMobAtPlayer()
     {
         var spawnTranslation = Random.insideUnitCircle;
         var spawnTranslation3d = new Vector3(spawnTranslation.x, 0f, spawnTranslation.y);
-        var mobGo = Instantiate(MobPrefab, PlayerMovement.I.transform.position + spawnTranslation3d, Quaternion.identity, transform);
-        Mobs.Add(mobGo.GetComponent<Rigidbody>());
+        SpawnMobAt(PlayerMovement.I.transform.position + spawnTranslation3d);
+    }
 
-        _spawned++;
+    public void SpawnMobAt(Vector3 pos)
+    {
+        var mobGo = Instantiate(MobPrefab, pos, Quaternion.identity, transform);
+        Mobs.Add(mobGo.GetComponent<Rigidbody>());
+        Spawned++;
         //TODO: not its place here
-        SpawnCountText.text = _spawned.ToString();
+        SpawnCountText.text = Spawned.ToString();
     }
 
     public void DespawnMob()
@@ -58,6 +64,7 @@ public class PlayerMobControl : MonoBehaviour
         int index = Random.Range(0, Mobs.Count);
         Destroy(Mobs[index].gameObject);
         Mobs.RemoveAt(index);
+        Spawned--;
     }
 
     public void MoveMobs(Vector3 delta)
