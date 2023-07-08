@@ -1,0 +1,12 @@
+{
+    "name": "InputActions",
+    "maps": [
+        {
+            "name": "InGame",
+            "id": "36f37b32-0c47-4894-9c41-1873cffd1728",
+            "actions": [],
+            "bindings": []
+        }
+    ],
+    "controlSchemes": []
+}
