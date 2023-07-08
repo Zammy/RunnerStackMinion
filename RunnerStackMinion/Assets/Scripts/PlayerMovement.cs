@@ -1,21 +1,33 @@
 using UnityEngine;
 using UnityEngine.InputSystem.EnhancedTouch;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
+using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 
-public class PlayerMovement : MonoBehaviour
+public class PlayerMovement : Monotone<PlayerMovement>
 {
-    public float ForwardSpeed = 1f;
-    public float SideSpeed = 5f;
-    public float LevelWidth = 20f;
+    [Header("Settings")]
+    [SerializeField] float ForwardSpeed = 1f;
+    [SerializeField] float LevelWidth = 20f;
+    [SerializeField] float LevelWidthDecreasePerMob = .05f;
+    [SerializeField] float InputMargin = 10f;
+
+    [Header("Refs")]
+    [SerializeField] PlayerMobControl PlayerMobControl;
 
     Rigidbody _rigidbody;
-    Vector2 _touchDelta;
     float _screenWidth;
     float _halfLevelWidth;
+    float _sideDelta;
 
-    void Awake()
+    float LevelEdge => _halfLevelWidth - LevelWidthDecreasePerMob * Mathf.Sqrt(PlayerMobControl.Mobs.Count / Mathf.PI);
+
+    protected override void Awake()
     {
+        base.Awake();
+
         EnhancedTouchSupport.Enable();
+        TouchSimulation.Enable();
+
         _screenWidth = Screen.width;
         _halfLevelWidth = LevelWidth / 2f;
     }
@@ -28,27 +40,45 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         var pos = _rigidbody.position;
-        if (Touch.activeFingers.Count >= 1)
+        if (Touch.activeTouches.Count >= 1)
         {
-            Touch activeTouch = Touch.activeFingers[0].currentTouch;
-            // Debug.Log($"Phase: {activeTouch.phase} | Position: {activeTouch.screenPosition}");
-
-            Vector3 sideDelta = Vector3.zero;
-            float t = activeTouch.screenPosition.x / _screenWidth;
-            pos.x = Mathf.Lerp(-_halfLevelWidth, _halfLevelWidth, t);
+            Touch activeTouch = Touch.activeTouches[0];
+            // Debug.Log($"Phase: {activeTouch.phase} | Position: {activeTouch.screenPosition} | Delta: {activeTouch.delta} | touchId : {activeTouch.touchId}");
+            if (activeTouch.phase == TouchPhase.Moved)
+            {
+                float touchDelta = activeTouch.delta.x;
+                float pixelsMargin = InputMargin * Screen.dpi;
+                float normalizedTouchDelta = touchDelta / (_screenWidth - pixelsMargin);
+                float deltaX = normalizedTouchDelta * LevelWidth;
+                _sideDelta = deltaX;
+            }
         }
-
-        var forwardDelta = transform.forward * Time.deltaTime * ForwardSpeed;
-        _rigidbody.MovePosition(pos + forwardDelta);
     }
 
-    void OnCollisionEnter(Collision collision)
+    void FixedUpdate()
     {
-        Debug.Log($"OnCollisionEnter {collision.collider.name}");
+        float newX = _rigidbody.position.x + _sideDelta;
+        if (newX > LevelEdge)
+            _sideDelta = LevelEdge - _rigidbody.position.x;
+        else if (newX < -LevelEdge)
+            _sideDelta = -LevelEdge - _rigidbody.position.x;
+
+        float forwardDelta = Time.deltaTime * ForwardSpeed;
+        _rigidbody.MovePosition(_rigidbody.position + Vector3.right * _sideDelta + transform.forward * forwardDelta);
+
+        PlayerMobControl.ApplyCohesionForce();
+        PlayerMobControl.MoveMobs(new Vector3(_sideDelta, 0f, forwardDelta));
+
+        _sideDelta = 0f;
     }
 
-    void OnCollisionExit(Collision collision)
-    {
-        Debug.Log($"OnCollisionExit {collision.collider.name}");
-    }
+    // void OnCollisionEnter(Collision collision)
+    // {
+    //     Debug.Log($"OnCollisionEnter {collision.collider.name}");
+    // }
+
+    // void OnCollisionExit(Collision collision)
+    // {
+    //     Debug.Log($"OnCollisionExit {collision.collider.name}");
+    // }
 }
