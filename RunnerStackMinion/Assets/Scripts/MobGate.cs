@@ -9,6 +9,7 @@ public enum MobGateType
     Add,
     Subtract,
     Multiply,
+    Divide,
 }
 
 public class MobGate : MonoBehaviour
@@ -71,6 +72,11 @@ public class MobGate : MonoBehaviour
                     BillboardText.text = $"x {Value}";
                     break;
                 }
+            case MobGateType.Divide:
+                {
+                    BillboardText.text = $"÷ {Value}";
+                    break;
+                }
             default:
                 break;
         }
@@ -94,6 +100,11 @@ public class MobGate : MonoBehaviour
             case MobGateType.Multiply:
                 {
                     mobDelta = PlayerMobControl.I.Spawned * Value - PlayerMobControl.I.Spawned;
+                    break;
+                }
+            case MobGateType.Divide:
+                {
+                    mobDelta = -PlayerMobControl.I.Spawned / Value;
                     break;
                 }
             default:

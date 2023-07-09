@@ -55,8 +55,8 @@ public class PlayerMobControl : Monotone<PlayerMobControl>
         var mobGo = Instantiate(MobPrefab, pos, Quaternion.identity, transform);
         Mobs.Add(mobGo.GetComponent<Rigidbody>());
         Spawned++;
-        //TODO: not its place here
-        SpawnCountText.text = Spawned.ToString();
+        UpdateUI();
+
     }
 
     public void DespawnMob()
@@ -65,6 +65,7 @@ public class PlayerMobControl : Monotone<PlayerMobControl>
         Destroy(Mobs[index].gameObject);
         Mobs.RemoveAt(index);
         Spawned--;
+        UpdateUI();
     }
 
     public void MoveMobs(Vector3 delta)
@@ -87,5 +88,11 @@ public class PlayerMobControl : Monotone<PlayerMobControl>
             mobBody.AddForce(toPlayer.normalized * toPlayer.sqrMagnitude * CohesionForce, ForceMode.VelocityChange);
             mobBody.velocity = Vector3.ClampMagnitude(mobBody.velocity, MobMaxSpeed);
         }
+    }
+
+    void UpdateUI()
+    {
+        //TODO: not its place here
+        SpawnCountText.text = Spawned.ToString();
     }
 }
