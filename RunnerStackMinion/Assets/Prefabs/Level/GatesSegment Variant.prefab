@@ -102,11 +102,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6743308912385730498, guid: 905d8f6e5827d3d40b92235e7c42a326, type: 3}
       propertyPath: Type
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6743308912385730498, guid: 905d8f6e5827d3d40b92235e7c42a326, type: 3}
       propertyPath: Value
-      value: 2
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6743308912385730498, guid: 905d8f6e5827d3d40b92235e7c42a326, type: 3}
       propertyPath: ConnectedGate

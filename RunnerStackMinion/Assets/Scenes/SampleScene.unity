@@ -836,7 +836,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5083107392249536480, guid: e7ce6b73bce65a246a1d34a22f9bbb35, type: 3}
       propertyPath: ForwardSpeed
-      value: 15
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 5083107392249536480, guid: e7ce6b73bce65a246a1d34a22f9bbb35, type: 3}
       propertyPath: PlayerMobControl
@@ -853,7 +853,7 @@ PrefabInstance:
     - target: {fileID: 5839677919735625681, guid: e7ce6b73bce65a246a1d34a22f9bbb35, type: 3}
       propertyPath: m_Material
       value: 
-      objectReference: {fileID: 13400000, guid: 39db21512750a67418bd490c52b92d51, type: 2}
+      objectReference: {fileID: 0}
     - target: {fileID: 8998955795364791229, guid: e7ce6b73bce65a246a1d34a22f9bbb35, type: 3}
       propertyPath: m_RootOrder
       value: 5
@@ -911,18 +911,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 6222747040041091637, guid: ebee6927f45380c44a5a3983ee00a5f6, type: 3}
-      propertyPath: Segments.Array.data[2].Prefab
-      value: 
-      objectReference: {fileID: 7700631850692339928, guid: 8718b1da33cb2e5429945d9bb727db79, type: 3}
-    - target: {fileID: 6222747040041091637, guid: ebee6927f45380c44a5a3983ee00a5f6, type: 3}
-      propertyPath: Segments.Array.data[0].SpawnWeight
-      value: 0.8
-      objectReference: {fileID: 0}
-    - target: {fileID: 6222747040041091637, guid: ebee6927f45380c44a5a3983ee00a5f6, type: 3}
-      propertyPath: Segments.Array.data[1].SpawnWeight
-      value: 0.5
-      objectReference: {fileID: 0}
     - target: {fileID: 7371878828475965363, guid: ebee6927f45380c44a5a3983ee00a5f6, type: 3}
       propertyPath: m_Name
       value: SimpleLevelGenerator
@@ -984,14 +972,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1777068597702664397, guid: 2f8e24ec6f798a34787b3f40c5c41453, type: 3}
-      propertyPath: MobMaxSpeed
-      value: 15
-      objectReference: {fileID: 0}
-    - target: {fileID: 1777068597702664397, guid: 2f8e24ec6f798a34787b3f40c5c41453, type: 3}
-      propertyPath: CohesionForce
-      value: 0.5
-      objectReference: {fileID: 0}
     - target: {fileID: 1777068597702664397, guid: 2f8e24ec6f798a34787b3f40c5c41453, type: 3}
       propertyPath: SpawnCountText
       value: 

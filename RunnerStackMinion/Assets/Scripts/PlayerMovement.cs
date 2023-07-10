@@ -78,7 +78,7 @@ public class PlayerMovement : Monotone<PlayerMovement>
         _rigidbody.MovePosition(_rigidbody.position + Vector3.right * _sideDelta + transform.forward * forwardDelta);
 
         PlayerMobControl.ApplyCohesionForce();
-        PlayerMobControl.MoveMobs(new Vector3(_sideDelta, 0f, forwardDelta));
+        PlayerMobControl.MoveMobs(new Vector3(_sideDelta, 0f, 0f));
 
         _sideDelta = 0f;
     }

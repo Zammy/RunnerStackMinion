@@ -25,7 +25,7 @@ public class MobGate : MonoBehaviour
 
     [Header("Settings")]
     public Material TriggerMaterial;
-    public float DelayBetweenSpawns;
+    public float TotalSpawnTime = 1f;
 
     [Header("Debug")]
     public bool Triggered;
@@ -35,7 +35,6 @@ public class MobGate : MonoBehaviour
 
     void Start()
     {
-        _delay = new WaitForSeconds(DelayBetweenSpawns);
         UpdateUI();
     }
 
@@ -133,12 +132,20 @@ public class MobGate : MonoBehaviour
     {
         PlayerMovement.I.Paused = true;
 
+        float spawnRate = (float)spawnAmount / TotalSpawnTime;
+        float timeAccumulator = 0f;
         while (spawnAmount > 0)
         {
-            PlayerMobControl.I.SpawnMobAt(SpawnPoint.position);
+            yield return null;
 
-            spawnAmount--;
-            yield return _delay;
+            timeAccumulator += Time.deltaTime;
+            int spawnThisFrame = Mathf.RoundToInt(spawnRate * timeAccumulator);
+            for (int i = 0; i < spawnThisFrame && spawnAmount > 0; i++)
+            {
+                PlayerMobControl.I.SpawnMobAt(SpawnPoint.position);
+                spawnAmount--;
+                timeAccumulator = 0f;
+            }
         }
 
         PlayerMovement.I.Paused = false;

@@ -26,5 +26,9 @@ public class PlayerMobControlEditor : Editor
         {
             playerMobControl.DespawnMob();
         }
+        if (GUILayout.Button("Half mob size"))
+        {
+            playerMobControl.Despawn();
+        }
     }
 }
