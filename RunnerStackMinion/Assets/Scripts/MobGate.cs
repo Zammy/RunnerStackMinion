@@ -33,8 +33,12 @@ public class MobGate : MonoBehaviour
 
     public UnityEvent OnDoorTriggered;
 
+    IPlayerMobControl _mobControl;
+
     void Start()
     {
+        _mobControl = ServiceLocator.Instance.GetService<IPlayerMobControl>();
+
         UpdateUI();
     }
 
@@ -98,12 +102,12 @@ public class MobGate : MonoBehaviour
                 }
             case MobGateType.Multiply:
                 {
-                    mobDelta = PlayerMobControl.I.Spawned * Value - PlayerMobControl.I.Spawned;
+                    mobDelta = _mobControl.Spawned * Value - _mobControl.Spawned;
                     break;
                 }
             case MobGateType.Divide:
                 {
-                    mobDelta = -PlayerMobControl.I.Spawned / Value;
+                    mobDelta = -_mobControl.Spawned / Value;
                     break;
                 }
             default:
@@ -118,19 +122,21 @@ public class MobGate : MonoBehaviour
         {
             for (int i = 0; i < -mobDelta; i++)
             {
-                if (PlayerMobControl.I.Spawned == 0)
+                if (_mobControl.Spawned == 0)
                 {
                     Debug.Log("GAME OVER!");
                     break;
                 }
-                PlayerMobControl.I.DespawnMob();
+                _mobControl.DespawnMob();
             }
         }
     }
 
     IEnumerator DoSpawnMobs(int spawnAmount)
     {
-        PlayerMovement.I.Paused = true;
+        //TODO: should go to GameController
+
+        // PlayerMovement.I.Paused = true;
 
         float spawnRate = (float)spawnAmount / TotalSpawnTime;
         float timeAccumulator = 0f;
@@ -142,13 +148,13 @@ public class MobGate : MonoBehaviour
             int spawnThisFrame = Mathf.RoundToInt(spawnRate * timeAccumulator);
             for (int i = 0; i < spawnThisFrame && spawnAmount > 0; i++)
             {
-                PlayerMobControl.I.SpawnMobAt(SpawnPoint.position);
+                _mobControl.SpawnMobAt(SpawnPoint.position);
                 spawnAmount--;
                 timeAccumulator = 0f;
             }
         }
 
-        PlayerMovement.I.Paused = false;
+        // PlayerMovement.I.Paused = false;
     }
 
 }

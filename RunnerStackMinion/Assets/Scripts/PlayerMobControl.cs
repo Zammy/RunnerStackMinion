@@ -2,7 +2,14 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
-public class PlayerMobControl : Monotone<PlayerMobControl>
+public interface IPlayerMobControl : IService, IInitializable
+{
+    int Spawned { get; }
+    void DespawnMob();
+    void SpawnMobAt(Vector3 position);
+}
+
+public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
 {
     [Header("Settings")]
     [SerializeField] GameObject MobPrefab;
@@ -17,19 +24,22 @@ public class PlayerMobControl : Monotone<PlayerMobControl>
 
     [Header("Debug")]
     [SerializeField] int SpawnOnStartup = 10;
-    public int Spawned;
-
+    public int Spawned { get; private set; }
     public List<Rigidbody> Mobs { get; set; }
 
-    protected override void Awake()
+    IPlayerMovement _playerMovement;
+
+    void Awake()
     {
-        base.Awake();
+        ServiceLocator.Instance.RegisterService(this);
 
         Mobs = new List<Rigidbody>();
     }
 
-    void Start()
+    public void Init()
     {
+        _playerMovement = ServiceLocator.Instance.GetService<IPlayerMovement>();
+
         Spawned = 1;
         Spawn();
     }
@@ -49,15 +59,13 @@ public class PlayerMobControl : Monotone<PlayerMobControl>
         int half = Spawned / 2;
         for (int i = 0; i < half; i++)
         {
-           DespawnMob();
+            DespawnMob();
         }
     }
 
     public void SpawnMobAtPlayer()
     {
-        // var spawnTranslation = Random.insideUnitCircle;
-        // var spawnTranslation3d = new Vector3(spawnTranslation.x, 0f, spawnTranslation.y);
-        SpawnMobAt(PlayerMovement.I.transform.position + _offsets[Spawned]);
+        SpawnMobAt(_playerMovement.Pos + _offsets[Spawned]);
     }
 
     public void SpawnMobAt(Vector3 pos)
@@ -94,11 +102,11 @@ public class PlayerMobControl : Monotone<PlayerMobControl>
         for (int i = 0; i < Mobs.Count; i++)
         {
             var mobBody = Mobs[i];
-            var toPlayer = PlayerMovement.I.transform.position - mobBody.position;
+            var toPlayer = _playerMovement.Pos - mobBody.position;
             mobBody.AddForce(toPlayer.normalized * toPlayer.sqrMagnitude * CohesionForce, ForceMode.VelocityChange);
             if (_offsets.Length > i)
             {
-                var toPos = PlayerMovement.I.transform.position + _offsets[i] - mobBody.position;
+                var toPos = _playerMovement.Pos + _offsets[i] - mobBody.position;
                 mobBody.AddForce(toPos.normalized * toPos.sqrMagnitude * FormationForce, ForceMode.VelocityChange);
             }
 
@@ -112,6 +120,7 @@ public class PlayerMobControl : Monotone<PlayerMobControl>
         SpawnCountText.text = Spawned.ToString();
     }
 
+#region Formation Positions
     static int CircleSize(int circle)
     {
         if (circle == 0)
@@ -140,6 +149,7 @@ public class PlayerMobControl : Monotone<PlayerMobControl>
             }
         }
     }
+    
     readonly Vector3[] kStartPositions = new Vector3[]
     {
         new Vector3(-1f, 0f, 0f),
@@ -149,7 +159,6 @@ public class PlayerMobControl : Monotone<PlayerMobControl>
         new Vector3(0.5f, 0f, -0.886f),
         new Vector3(-0.5f, 0f, -0.886f),
     };
-
     readonly Vector3[] kDirections = new Vector3[]
     {
         new Vector3(0.5f, 0f, 0.886f),
@@ -185,7 +194,6 @@ public class PlayerMobControl : Monotone<PlayerMobControl>
         }
     }
 
-
     [HideInInspector]
     [SerializeField]
     Vector3[] _offsets;
@@ -197,6 +205,5 @@ public class PlayerMobControl : Monotone<PlayerMobControl>
             Gizmos.DrawSphere(transform.position + _offsets[i], .25f);
         }
     }
-
-
+#endregion
 }

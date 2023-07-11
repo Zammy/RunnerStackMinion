@@ -3,7 +3,12 @@ using UnityEngine.InputSystem.EnhancedTouch;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 
-public class PlayerMovement : Monotone<PlayerMovement>
+public interface IPlayerMovement : IService, IInitializable, ITickable, ITickableFixed
+{
+    Vector3 Pos { get; }
+}
+
+public class PlayerMovement : MonoBehaviour, IPlayerMovement
 {
     [Header("Settings")]
     [SerializeField] float ForwardSpeed = 1f;
@@ -17,6 +22,8 @@ public class PlayerMovement : Monotone<PlayerMovement>
     [Header("Debug")]
     public bool Paused;
 
+    public Vector3 Pos => transform.position;
+
 
     Rigidbody _rigidbody;
     float _screenWidth;
@@ -25,9 +32,9 @@ public class PlayerMovement : Monotone<PlayerMovement>
 
     float LevelEdge => _halfLevelWidth - LevelWidthDecreasePerMob * Mathf.Sqrt(PlayerMobControl.Mobs.Count / Mathf.PI);
 
-    protected override void Awake()
+    void Awake()
     {
-        base.Awake();
+        ServiceLocator.Instance.RegisterService(this);
 
         EnhancedTouchSupport.Enable();
         TouchSimulation.Enable();
@@ -36,12 +43,12 @@ public class PlayerMovement : Monotone<PlayerMovement>
         _halfLevelWidth = LevelWidth / 2f;
     }
 
-    void Start()
+    public void Init()
     {
         _rigidbody = GetComponent<Rigidbody>();
     }
 
-    void Update()
+    public void Tick(float deltaTime)
     {
         var pos = _rigidbody.position;
         if (Touch.activeTouches.Count >= 1)
@@ -59,7 +66,7 @@ public class PlayerMovement : Monotone<PlayerMovement>
         }
     }
 
-    void FixedUpdate()
+    public void TickFixed(float fixedDeltaTime)
     {
         float newX = _rigidbody.position.x + _sideDelta;
         if (newX > LevelEdge)
@@ -67,7 +74,7 @@ public class PlayerMovement : Monotone<PlayerMovement>
         else if (newX < -LevelEdge)
             _sideDelta = -LevelEdge - _rigidbody.position.x;
 
-        float forwardDelta = Time.deltaTime * ForwardSpeed;
+        float forwardDelta = fixedDeltaTime * ForwardSpeed;
 
         if (Paused)
         {

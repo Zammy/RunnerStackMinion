@@ -23,11 +23,13 @@ public class SimpleLevelGenerator : MonoBehaviour
 
     Queue<GameObject> _spawnedSegments;
     [Header("Debug")]
+    [ReadOnly]
     [SerializeField] int _numSpawned;
     float[] _segmentRolls;
     float _spawnedUntil;
     float _spawnDistanceToMaintain;
     int _lastSpawnedSegmenet;
+    IPlayerMovement _playerMovement;
 
     void Awake()
     {
@@ -37,6 +39,8 @@ public class SimpleLevelGenerator : MonoBehaviour
 
     void Start()
     {
+        _playerMovement = ServiceLocator.Instance.GetService<IPlayerMovement>();
+
         _numSpawned = 0;
         _spawnedUntil = 0f;
 
@@ -54,7 +58,7 @@ public class SimpleLevelGenerator : MonoBehaviour
 
     void Update()
     {
-        var playerPos = PlayerMovement.I.transform.position;
+        var playerPos = _playerMovement.Pos;
         if (playerPos.z > (_spawnedUntil - _spawnDistanceToMaintain))
         {
             SpawnSegment();
