@@ -3,9 +3,11 @@ using UnityEngine.InputSystem.EnhancedTouch;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 
-public interface IPlayerMovement : IService, IInitializable, ITickable, ITickableFixed
+public interface IPlayerMovement : IService, IInitializable
 {
     Vector3 Pos { get; }
+    void ReadGameInput();
+    float MovePlayer(float fixedDeltaTime, int spawnCount);
 }
 
 public class PlayerMovement : MonoBehaviour, IPlayerMovement
@@ -16,21 +18,12 @@ public class PlayerMovement : MonoBehaviour, IPlayerMovement
     [SerializeField] float LevelWidthDecreasePerMob = .05f;
     [SerializeField] float InputMargin = 10f;
 
-    [Header("Refs")]
-    [SerializeField] PlayerMobControl PlayerMobControl;
-
-    [Header("Debug")]
-    public bool Paused;
-
     public Vector3 Pos => transform.position;
-
 
     Rigidbody _rigidbody;
     float _screenWidth;
     float _halfLevelWidth;
     float _sideDelta;
-
-    float LevelEdge => _halfLevelWidth - LevelWidthDecreasePerMob * Mathf.Sqrt(PlayerMobControl.Mobs.Count / Mathf.PI);
 
     void Awake()
     {
@@ -48,7 +41,7 @@ public class PlayerMovement : MonoBehaviour, IPlayerMovement
         _rigidbody = GetComponent<Rigidbody>();
     }
 
-    public void Tick(float deltaTime)
+    public void ReadGameInput()
     {
         var pos = _rigidbody.position;
         if (Touch.activeTouches.Count >= 1)
@@ -66,8 +59,9 @@ public class PlayerMovement : MonoBehaviour, IPlayerMovement
         }
     }
 
-    public void TickFixed(float fixedDeltaTime)
+    public float MovePlayer(float fixedDeltaTime, int spawnCount)
     {
+        float LevelEdge = CalculateLevelEdge(spawnCount);
         float newX = _rigidbody.position.x + _sideDelta;
         if (newX > LevelEdge)
             _sideDelta = LevelEdge - _rigidbody.position.x;
@@ -76,17 +70,15 @@ public class PlayerMovement : MonoBehaviour, IPlayerMovement
 
         float forwardDelta = fixedDeltaTime * ForwardSpeed;
 
-        if (Paused)
-        {
-            forwardDelta = 0f;
-            _sideDelta = 0f;
-        }
-
         _rigidbody.MovePosition(_rigidbody.position + Vector3.right * _sideDelta + transform.forward * forwardDelta);
 
-        PlayerMobControl.ApplyCohesionForce();
-        PlayerMobControl.MoveMobs(new Vector3(_sideDelta, 0f, 0f));
-
+        var sideDelta = _sideDelta;
         _sideDelta = 0f;
+        return sideDelta;
+    }
+
+    float CalculateLevelEdge(int spawnCount)
+    {
+        return _halfLevelWidth - LevelWidthDecreasePerMob * Mathf.Sqrt(spawnCount / Mathf.PI);
     }
 }

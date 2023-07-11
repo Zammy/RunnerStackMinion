@@ -5,8 +5,12 @@ using UnityEngine;
 public interface IPlayerMobControl : IService, IInitializable
 {
     int Spawned { get; }
+
+    void SpawnInitial();
     void DespawnMob();
     void SpawnMobAt(Vector3 position);
+    void ApplyCohesionForce();
+    void MoveMobs(Vector3 delta);
 }
 
 public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
@@ -41,11 +45,10 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
         _playerMovement = ServiceLocator.Instance.GetService<IPlayerMovement>();
 
         Spawned = 1;
-        Spawn();
     }
 
     [ContextMenu("Spawn")]
-    public void Spawn()
+    public void SpawnInitial()
     {
         for (int i = 0; i < SpawnOnStartup; i++)
         {
@@ -120,7 +123,7 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
         SpawnCountText.text = Spawned.ToString();
     }
 
-#region Formation Positions
+    #region Formation Positions
     static int CircleSize(int circle)
     {
         if (circle == 0)
@@ -149,7 +152,7 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
             }
         }
     }
-    
+
     readonly Vector3[] kStartPositions = new Vector3[]
     {
         new Vector3(-1f, 0f, 0f),
@@ -205,5 +208,5 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
             Gizmos.DrawSphere(transform.position + _offsets[i], .25f);
         }
     }
-#endregion
+    #endregion
 }

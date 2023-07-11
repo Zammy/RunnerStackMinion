@@ -5,7 +5,12 @@ using UnityEngine.Serialization;
 using UnityEditor;
 #endif
 
-public class SimpleLevelGenerator : MonoBehaviour
+public interface ILevelGenerator : IService, IInitializable, ITickable
+{
+
+}
+
+public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
 {
     [System.Serializable]
     public struct SegmentSetting
@@ -18,45 +23,44 @@ public class SimpleLevelGenerator : MonoBehaviour
     [Header("Settings")]
     [SerializeField] SegmentSetting[] Segments;
     [SerializeField] float DecreaseWeightOnRecentlySpawnedBy = 0.25f;
-    [SerializeField] int SegmentsToCreateAtStart = 20;
+    [SerializeField] int SegmentsToCreate = 20;
     [SerializeField] float DespawnSegmentsAfter = 50f;
 
-    Queue<GameObject> _spawnedSegments;
+    readonly Queue<GameObject> _spawnedSegments = new Queue<GameObject>();
+
     [Header("Debug")]
     [ReadOnly]
-    [SerializeField] int _numSpawned;
-    float[] _segmentRolls;
+    [SerializeField]
+    int _numSpawned;
+
+    [ReadOnly]
+    [SerializeField]
     float _spawnedUntil;
+    float[] _segmentRolls;
     float _spawnDistanceToMaintain;
     int _lastSpawnedSegmenet;
     IPlayerMovement _playerMovement;
 
     void Awake()
     {
-        _spawnedSegments = new Queue<GameObject>();
+        ServiceLocator.Instance.RegisterService(this);
+
         _segmentRolls = new float[Segments.Length];
     }
 
-    void Start()
+    public void Init()
     {
         _playerMovement = ServiceLocator.Instance.GetService<IPlayerMovement>();
 
         _numSpawned = 0;
         _spawnedUntil = 0f;
 
-        for (int i = 0; i < SegmentsToCreateAtStart; i++)
-        {
-            if (i < 2)
-                SpawnSegment(0);
-            else
-                SpawnSegment();
-
-        }
+        SpawnLevelStatic();
 
         _spawnDistanceToMaintain = _spawnedUntil;
     }
 
-    void Update()
+    public void Tick(float deltaTime)
     {
         var playerPos = _playerMovement.Pos;
         if (playerPos.z > (_spawnedUntil - _spawnDistanceToMaintain))
@@ -67,6 +71,18 @@ public class SimpleLevelGenerator : MonoBehaviour
         if (playerPos.z - oldestSegment.transform.position.z > DespawnSegmentsAfter)
         {
             DespawnSegment(_spawnedSegments.Dequeue());
+        }
+    }
+
+    [ContextMenu("SpawnLevelStatic")]
+    public void SpawnLevelStatic()
+    {
+        for (int i = 0; i < SegmentsToCreate; i++)
+        {
+            if (i < 2) //first two segments to be base
+                SpawnSegment(0);
+            else
+                SpawnSegment();
         }
     }
 
@@ -130,6 +146,18 @@ public class SimpleLevelGenerator : MonoBehaviour
             Segments[i].SegmentSize = floor.transform.localScale.z;
         }
         EditorUtility.SetDirty(gameObject);
+    }
+
+    [ContextMenu("ClearSpawned")]
+    public void ClearSpawned()
+    {
+        _numSpawned = 0;
+        _spawnedUntil = 0f;
+
+        while (_spawnedSegments.Count > 0)
+        {
+            DespawnSegment(_spawnedSegments.Dequeue());
+        }
     }
 #endif
 }

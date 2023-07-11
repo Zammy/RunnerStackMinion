@@ -16,7 +16,7 @@ public class PlayerMobControlEditor : Editor
         var playerMobControl = (PlayerMobControl)target;
         if (GUILayout.Button("Spawn"))
         {
-            playerMobControl.Spawn();
+            playerMobControl.SpawnInitial();
         }
         if (GUILayout.Button("Add Mob"))
         {

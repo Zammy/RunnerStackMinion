@@ -30,7 +30,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1777068597702664397
 MonoBehaviour:
@@ -46,11 +46,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MobPrefab: {fileID: 3733019444376458542, guid: 191ce525dfa2573439a9b6030d74f393, type: 3}
   CohesionForce: 0.025
-  FormationForce: 0.05
+  FormationForce: 0.1
   MobMaxSpeed: 15
   SpawnCountText: {fileID: 0}
   SpawnOnStartup: 50
-  Spawned: 0
   _offsets:
   - {x: 0, y: 0, z: 0}
   - {x: -1, y: 0, z: 0}
