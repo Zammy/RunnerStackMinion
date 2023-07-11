@@ -24,7 +24,7 @@ public class PlayerMobControlEditor : Editor
         }
         if (GUILayout.Button("Remove Mob"))
         {
-            playerMobControl.DespawnMob();
+            playerMobControl.DespawnRandomPlayerMob();
         }
         if (GUILayout.Button("Half mob size"))
         {

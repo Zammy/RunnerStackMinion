@@ -127,7 +127,7 @@ public class MobGate : MonoBehaviour
                     Debug.Log("GAME OVER!");
                     break;
                 }
-                _mobControl.DespawnMob();
+                _mobControl.DespawnRandomPlayerMob();
             }
         }
     }
@@ -148,7 +148,7 @@ public class MobGate : MonoBehaviour
             int spawnThisFrame = Mathf.RoundToInt(spawnRate * timeAccumulator);
             for (int i = 0; i < spawnThisFrame && spawnAmount > 0; i++)
             {
-                _mobControl.SpawnMobAt(SpawnPoint.position);
+                _mobControl.SpawnMobAt(MobType.Player, SpawnPoint.position);
                 spawnAmount--;
                 timeAccumulator = 0f;
             }

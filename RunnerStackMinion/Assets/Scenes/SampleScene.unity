@@ -677,6 +677,7 @@ MonoBehaviour:
   StartGameButton: {fileID: 251423461}
   InGameCanvas: {fileID: 2019669802}
   MainMenuVirtualCam: {fileID: 4537806047613396695}
+  SpawnCountText: {fileID: 466800304}
 --- !u!1001 &883102745
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -741,6 +742,14 @@ PrefabInstance:
       propertyPath: m_LookAt
       value: 
       objectReference: {fileID: 1733513624}
+    - target: {fileID: 7282898344346865799, guid: 775be8e87563f8c4ab1e14c9159e462a, type: 3}
+      propertyPath: m_LookaheadTime
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7282898344346865799, guid: 775be8e87563f8c4ab1e14c9159e462a, type: 3}
+      propertyPath: m_LookaheadSmoothing
+      value: 3
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1167,7 +1176,7 @@ GameObject:
   - component: {fileID: 1781494208}
   - component: {fileID: 1781494207}
   m_Layer: 5
-  m_Name: MainMenu
+  m_Name: MainMenuCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1540,7 +1549,7 @@ GameObject:
   - component: {fileID: 2019669801}
   - component: {fileID: 2019669800}
   m_Layer: 5
-  m_Name: InGameOverlay
+  m_Name: InGameOverlayCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1790,12 +1799,8 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 6222747040041091637, guid: ebee6927f45380c44a5a3983ee00a5f6, type: 3}
-      propertyPath: _numSpawned
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6222747040041091637, guid: ebee6927f45380c44a5a3983ee00a5f6, type: 3}
-      propertyPath: _spawnedUntil
-      value: 0
+      propertyPath: SegmentsToCreate
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 7371878828475965363, guid: ebee6927f45380c44a5a3983ee00a5f6, type: 3}
       propertyPath: m_Name
@@ -1859,13 +1864,9 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1777068597702664397, guid: 2f8e24ec6f798a34787b3f40c5c41453, type: 3}
-      propertyPath: PlayerPrefab
-      value: 
-      objectReference: {fileID: 5351235321144068194, guid: e7ce6b73bce65a246a1d34a22f9bbb35, type: 3}
-    - target: {fileID: 1777068597702664397, guid: 2f8e24ec6f798a34787b3f40c5c41453, type: 3}
-      propertyPath: SpawnCountText
-      value: 
-      objectReference: {fileID: 466800304}
+      propertyPath: MobEncounterForce
+      value: 0.1
+      objectReference: {fileID: 0}
     - target: {fileID: 4287503832450250571, guid: 2f8e24ec6f798a34787b3f40c5c41453, type: 3}
       propertyPath: m_Name
       value: MobsController

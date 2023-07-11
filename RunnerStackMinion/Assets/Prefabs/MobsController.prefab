@@ -45,10 +45,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MobPrefab: {fileID: 3733019444376458542, guid: 191ce525dfa2573439a9b6030d74f393, type: 3}
+  MobEnemyPrefab: {fileID: 5644645605836058460, guid: 24e62a0c712edba418df5327b760bd7d, type: 3}
   CohesionForce: 0.025
   FormationForce: 0.1
   MobMaxSpeed: 15
-  SpawnCountText: {fileID: 0}
+  MobEncounterForce: 1
   SpawnOnStartup: 50
   _offsets:
   - {x: 0, y: 0, z: 0}

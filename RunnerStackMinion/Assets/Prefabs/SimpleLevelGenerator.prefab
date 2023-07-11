@@ -30,7 +30,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 2
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6222747040041091637
 MonoBehaviour:
@@ -60,7 +60,11 @@ MonoBehaviour:
   - Prefab: {fileID: 6247545373154733749, guid: b7b7b3ed9e7711446967777cc17f9a91, type: 3}
     SpawnWeight: 0.2
     SegmentSize: 20
+  - Prefab: {fileID: 1565306841307870209, guid: d4c7b812f91175243b550571e20b3027, type: 3}
+    SpawnWeight: 0.2
+    SegmentSize: 60
   DecreaseWeightOnRecentlySpawnedBy: 0.25
-  SegmentsToCreateAtStart: 20
+  SegmentsToCreate: 20
   DespawnSegmentsAfter: 50
   _numSpawned: 0
+  _spawnedUntil: 0

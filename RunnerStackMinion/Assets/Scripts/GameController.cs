@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,7 +10,7 @@ public enum GameState
     InMenu,
     // GameStart, //If we want to have count down
     GameMoving,
-    GameNotMoving,
+    GameEncounter,
     GameOver
 }
 
@@ -25,6 +27,7 @@ public abstract class GameStateBase
     public virtual void Tick(float deltaTime) { }
     public virtual void FixedTick(float fixedDeltaTime) { }
     public virtual void Exit() { }
+    public virtual void OnEvent(GameEvent gameEvent) { }
 }
 
 public class InMenuState : GameStateBase
@@ -53,14 +56,29 @@ public class InMenuState : GameStateBase
     }
 }
 
-public class GameMovingState : GameStateBase
+public abstract class UpdateGameUIState : GameStateBase
 {
-    IPlayerMobControl _mobControl;
+    protected IPlayerMobControl _mobControl;
+
+    public UpdateGameUIState(GameController controller) : base(controller)
+    {
+        _mobControl = ServiceLocator.Instance.GetService<IPlayerMobControl>();
+    }
+
+    public override void Tick(float deltaTime)
+    {
+        base.Tick(deltaTime);
+
+        _c.SpawnCountText.text = _mobControl.Spawned.ToString();
+    }
+}
+
+public class GameMovingState : UpdateGameUIState
+{
     IPlayerMovement _playerMovement;
 
     public GameMovingState(GameController controller) : base(controller)
     {
-        _mobControl = ServiceLocator.Instance.GetService<IPlayerMobControl>();
         _playerMovement = ServiceLocator.Instance.GetService<IPlayerMovement>();
     }
 
@@ -72,6 +90,8 @@ public class GameMovingState : GameStateBase
 
     public override void Tick(float deltaTime)
     {
+        base.Tick(deltaTime);
+
         _playerMovement.ReadGameInput();
     }
 
@@ -86,13 +106,61 @@ public class GameMovingState : GameStateBase
     {
         _c.InGameCanvas.gameObject.SetActive(false);
     }
+
+    public override void OnEvent(GameEvent gameEvent)
+    {
+        base.OnEvent(gameEvent);
+
+        var mobEncounterEvent = gameEvent as MobEncounterEvent;
+        if (mobEncounterEvent != null)
+        {
+            _c.ChangeStateToAndRaise(GameState.GameEncounter, gameEvent);
+        }
+    }
 }
 
+public class GameEncounterState : UpdateGameUIState
+{
+    public GameEncounterState(GameController controller) : base(controller)
+    {
+    }
+
+    public override void FixedTick(float fixedDeltaTime)
+    {
+        if (_mobControl.Spawned > 1)
+        {
+            _mobControl.ApplyEncounterForce(_battlefieldPos);
+        }
+    }
+
+    public override void OnEvent(GameEvent gameEvent)
+    {
+        base.OnEvent(gameEvent);
+
+        var mobEncounterEvent = gameEvent as MobEncounterEvent;
+        if (mobEncounterEvent != null)
+        {
+            _battlefieldPos = mobEncounterEvent.Pos;
+
+            
+        }
+    }
+
+    Vector3 _battlefieldPos;
+}
+
+public abstract class GameEvent { }
+public class MobEncounterEvent : GameEvent
+{
+    public Vector3 Pos { get; set; }
+}
 
 public interface IGameController : IService, IInitializable, ITickable, ITickableFixed
 {
+    void RaiseEvent(GameEvent gameEvent);
 }
 
+//TODO split FSM and View in separate interfaces
 public class GameController : MonoBehaviour, IGameController
 {
     [Header("Refs")]
@@ -100,6 +168,7 @@ public class GameController : MonoBehaviour, IGameController
     public Button StartGameButton;
     public Canvas InGameCanvas;
     public GameObject MainMenuVirtualCam;
+    public TextMeshProUGUI SpawnCountText;
 
     GameStateBase _currentState;
     Dictionary<GameState, GameStateBase> _states;
@@ -117,6 +186,7 @@ public class GameController : MonoBehaviour, IGameController
         {
             { GameState.InMenu, new InMenuState(this) },
             { GameState.GameMoving, new GameMovingState(this)},
+            { GameState.GameEncounter, new GameEncounterState(this)},
         };
 
         ChangeStateTo(GameState.InMenu);
@@ -140,5 +210,16 @@ public class GameController : MonoBehaviour, IGameController
         }
         _currentState = _states[state];
         _currentState.Enter();
+    }
+
+    public void ChangeStateToAndRaise(GameState state, GameEvent gameEvent)
+    {
+        ChangeStateTo(state);
+        _currentState?.OnEvent(gameEvent);
+    }
+
+    public void RaiseEvent(GameEvent gameEvent)
+    {
+        _currentState?.OnEvent(gameEvent);
     }
 }

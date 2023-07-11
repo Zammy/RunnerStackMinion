@@ -81,6 +81,8 @@ public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
         {
             if (i < 2) //first two segments to be base
                 SpawnSegment(0);
+            else if (i == 2)
+                SpawnSegment(5);
             else
                 SpawnSegment();
         }

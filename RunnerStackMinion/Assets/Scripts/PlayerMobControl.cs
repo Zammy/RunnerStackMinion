@@ -1,35 +1,47 @@
+using System;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
+
+public enum MobType
+{
+    Player,
+    Enemy
+}
 
 public interface IPlayerMobControl : IService, IInitializable
 {
     int Spawned { get; }
 
     void SpawnInitial();
-    void DespawnMob();
-    void SpawnMobAt(Vector3 position);
+    void DespawnRandomPlayerMob();
+    void DespawnMob(Mob mob);
+    void SpawnMobAt(MobType type, Vector3 position);
     void ApplyCohesionForce();
     void MoveMobs(Vector3 delta);
+    void ApplyEncounterForce(Vector3 battlefieldPos);
 }
 
 public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
 {
     [Header("Settings")]
     [SerializeField] GameObject MobPrefab;
+    [SerializeField] GameObject MobEnemyPrefab;
 
     [SerializeField] float CohesionForce = 1f;
     [SerializeField] float FormationForce = 1f;
     [SerializeField] float MobMaxSpeed = 1f;
-
-    [Header("Refs")]
-    [SerializeField] TextMeshProUGUI SpawnCountText;
+    [SerializeField] float MobEncounterForce = 1f;
 
 
     [Header("Debug")]
     [SerializeField] int SpawnOnStartup = 10;
-    public int Spawned { get; private set; }
-    public List<Rigidbody> Mobs { get; set; }
+
+
+    public event Action OnPlayerDied;
+
+    public int Spawned => Mobs.Count + 1;
+
+    List<Mob> Mobs { get; set; }
 
     IPlayerMovement _playerMovement;
 
@@ -37,14 +49,12 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
     {
         ServiceLocator.Instance.RegisterService(this);
 
-        Mobs = new List<Rigidbody>();
+        Mobs = new List<Mob>();
     }
 
     public void Init()
     {
         _playerMovement = ServiceLocator.Instance.GetService<IPlayerMovement>();
-
-        Spawned = 1;
     }
 
     [ContextMenu("Spawn")]
@@ -62,41 +72,60 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
         int half = Spawned / 2;
         for (int i = 0; i < half; i++)
         {
-            DespawnMob();
+            DespawnRandomPlayerMob();
+        }
+    }
+
+    public void DespawnMob(Mob despawnMob)
+    {
+        for (int i = 0; i < Mobs.Count; i++)
+        {
+            var mob = Mobs[i];
+            if (mob == despawnMob)
+            {
+                Mobs.RemoveAt(i);
+                Destroy(despawnMob.gameObject);
+                break;
+            }
+        }
+
+        if (despawnMob == _playerMovement.Body)
+        {
+            OnPlayerDied?.Invoke();
         }
     }
 
     public void SpawnMobAtPlayer()
     {
-        SpawnMobAt(_playerMovement.Pos + _offsets[Spawned]);
+        SpawnMobAt(MobType.Player, _playerMovement.Pos + _offsets[Spawned]);
     }
 
-    public void SpawnMobAt(Vector3 pos)
+    public void SpawnMobAt(MobType type, Vector3 pos)
     {
-        var mobGo = Instantiate(MobPrefab, pos, Quaternion.identity, transform);
-        Mobs.Add(mobGo.GetComponent<Rigidbody>());
-        Spawned++;
-        UpdateUI();
+        var prefab = MobPrefab;
+        if (type == MobType.Enemy)
+            prefab = MobEnemyPrefab;
 
+        var mobGo = Instantiate(prefab, pos, Quaternion.identity, transform);
+        mobGo.GetComponent<Mob>().Type = type;
+        Mobs.Add(mobGo.GetComponent<Mob>());
     }
 
-    public void DespawnMob()
+    public void DespawnRandomPlayerMob()
     {
-        int index = Random.Range(0, Mobs.Count);
+        int index = UnityEngine.Random.Range(0, Mobs.Count);
         Destroy(Mobs[index].gameObject);
         Mobs.RemoveAt(index);
-        Spawned--;
-        UpdateUI();
     }
 
     public void MoveMobs(Vector3 delta)
     {
         for (int i = 0; i < Mobs.Count; i++)
         {
-            var mobBody = Mobs[i];
-            var mobPos = mobBody.position;
+            var mob = Mobs[i];
+            var mobPos = mob.Body.position;
             mobPos += delta;
-            mobBody.MovePosition(mobPos);
+            mob.Body.MovePosition(mobPos);
         }
     }
 
@@ -104,23 +133,30 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
     {
         for (int i = 0; i < Mobs.Count; i++)
         {
-            var mobBody = Mobs[i];
-            var toPlayer = _playerMovement.Pos - mobBody.position;
-            mobBody.AddForce(toPlayer.normalized * toPlayer.sqrMagnitude * CohesionForce, ForceMode.VelocityChange);
+            var mob = Mobs[i];
+            if (mob.Type != MobType.Player)
+                continue;
+            var toPlayer = _playerMovement.Pos - mob.Body.position;
+            mob.Body.AddForce(toPlayer.normalized * toPlayer.sqrMagnitude * CohesionForce, ForceMode.VelocityChange);
             if (_offsets.Length > i)
             {
-                var toPos = _playerMovement.Pos + _offsets[i] - mobBody.position;
-                mobBody.AddForce(toPos.normalized * toPos.sqrMagnitude * FormationForce, ForceMode.VelocityChange);
+                var toPos = _playerMovement.Pos + _offsets[i] - mob.Body.position;
+                mob.Body.AddForce(toPos.normalized * toPos.sqrMagnitude * FormationForce, ForceMode.VelocityChange);
             }
 
-            mobBody.velocity = Vector3.ClampMagnitude(mobBody.velocity, MobMaxSpeed);
+            mob.Body.velocity = Vector3.ClampMagnitude(mob.Body.velocity, MobMaxSpeed);
         }
     }
 
-    void UpdateUI()
+    public void ApplyEncounterForce(Vector3 battlefieldPos)
     {
-        //TODO: not its place here
-        SpawnCountText.text = Spawned.ToString();
+        for (int i = 0; i < Mobs.Count; i++)
+        {
+            var mob = Mobs[i];
+            var toBattlefield = battlefieldPos - mob.Body.position;
+            mob.Body.AddForce(toBattlefield.normalized * toBattlefield.sqrMagnitude * MobEncounterForce, ForceMode.VelocityChange);
+            mob.Body.velocity = Vector3.ClampMagnitude(mob.Body.velocity, MobMaxSpeed);
+        }
     }
 
     #region Formation Positions
@@ -201,12 +237,12 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
     [SerializeField]
     Vector3[] _offsets;
 
-    private void OnDrawGizmos()
-    {
-        for (int i = 0; i < _offsets.Length; i++)
-        {
-            Gizmos.DrawSphere(transform.position + _offsets[i], .25f);
-        }
-    }
+    // private void OnDrawGizmos()
+    // {
+    //     for (int i = 0; i < _offsets.Length; i++)
+    //     {
+    //         Gizmos.DrawSphere(transform.position + _offsets[i], .25f);
+    //     }
+    // }
     #endregion
 }

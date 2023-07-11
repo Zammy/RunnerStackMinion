@@ -6,6 +6,7 @@ using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 public interface IPlayerMovement : IService, IInitializable
 {
     Vector3 Pos { get; }
+    Rigidbody Body { get; }
     void ReadGameInput();
     float MovePlayer(float fixedDeltaTime, int spawnCount);
 }
@@ -19,6 +20,7 @@ public class PlayerMovement : MonoBehaviour, IPlayerMovement
     [SerializeField] float InputMargin = 10f;
 
     public Vector3 Pos => transform.position;
+    public Rigidbody Body => _rigidbody;
 
     Rigidbody _rigidbody;
     float _screenWidth;
