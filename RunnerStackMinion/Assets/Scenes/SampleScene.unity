@@ -563,8 +563,8 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 1
+  m_Color: {r: 1, g: 0.73170733, b: 0, a: 1}
+  m_Intensity: 1.5
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -1858,6 +1858,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1777068597702664397, guid: 2f8e24ec6f798a34787b3f40c5c41453, type: 3}
+      propertyPath: PlayerPrefab
+      value: 
+      objectReference: {fileID: 5351235321144068194, guid: e7ce6b73bce65a246a1d34a22f9bbb35, type: 3}
     - target: {fileID: 1777068597702664397, guid: 2f8e24ec6f798a34787b3f40c5c41453, type: 3}
       propertyPath: SpawnCountText
       value: 
