@@ -10,15 +10,18 @@ public enum MobType
 
 public interface IPlayerMobControl : IService, IInitializable
 {
-    int Spawned { get; }
+    // event Action<Mob> OnDespawned;
+    event Action OnPlayerDied;
 
+    int GetMobCount(MobType type);
     void SpawnInitial();
     void DespawnRandomPlayerMob();
     void DespawnMob(Mob mob);
-    void SpawnMobAt(MobType type, Vector3 position);
+    Mob SpawnMobAt(MobType type, Vector3 position);
     void ApplyCohesionForce();
     void MoveMobs(Vector3 delta);
     void ApplyEncounterForce(Vector3 battlefieldPos);
+    void ApplyEncounterForceToPlayer(Vector3 battlefieldPos);
 }
 
 public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
@@ -32,29 +35,36 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
     [SerializeField] float MobMaxSpeed = 1f;
     [SerializeField] float MobEncounterForce = 1f;
 
-
     [Header("Debug")]
     [SerializeField] int SpawnOnStartup = 10;
 
-
     public event Action OnPlayerDied;
-
-    public int Spawned => Mobs.Count + 1;
-
-    List<Mob> Mobs { get; set; }
+    // public event Action<Mob> OnDespawned;
 
     IPlayerMovement _playerMovement;
+    List<Mob>[] _mobs;
+    int _mobTypesCount;
 
     void Awake()
     {
         ServiceLocator.Instance.RegisterService(this);
-
-        Mobs = new List<Mob>();
     }
 
     public void Init()
     {
+        _mobTypesCount = Enum.GetNames(typeof(MobType)).Length;
+        _mobs = new List<Mob>[_mobTypesCount];
+        for (int i = 0; i < _mobTypesCount; i++)
+        {
+            _mobs[i] = new List<Mob>();
+        }
+
         _playerMovement = ServiceLocator.Instance.GetService<IPlayerMovement>();
+    }
+
+    public int GetMobCount(MobType type)
+    {
+        return _mobs[(int)type].Count;
     }
 
     [ContextMenu("Spawn")]
@@ -69,60 +79,80 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
     [ContextMenu("HalfMobSize")]
     public void Despawn()
     {
-        int half = Spawned / 2;
+        int half = GetMobCount(MobType.Player) / 2;
         for (int i = 0; i < half; i++)
         {
             DespawnRandomPlayerMob();
         }
     }
 
-    public void DespawnMob(Mob despawnMob)
+    // static Dictionary<int, bool> _ids = new Dictionary<int, bool>();
+
+    public void DespawnMob(Mob mob)
     {
-        for (int i = 0; i < Mobs.Count; i++)
+        // int id = mob.GetInstanceID();
+        // if (_ids.ContainsKey(id))
+        //     Debug.LogError("Has the same key! " + id);
+        // _ids.Add(id, true);
+
+        for (int y = 0; y < _mobTypesCount; y++)
         {
-            var mob = Mobs[i];
-            if (mob == despawnMob)
+            for (int i = 0; i < _mobs[y].Count; i++)
             {
-                Mobs.RemoveAt(i);
-                Destroy(despawnMob.gameObject);
-                break;
+                var otherMob = _mobs[y][i];
+                if (mob == otherMob)
+                {
+                    _mobs[y].RemoveAt(i);
+                    Destroy(otherMob.gameObject);
+                    break;
+                }
             }
         }
 
-        if (despawnMob == _playerMovement.Body)
+        if (mob.Body == _playerMovement.Body)
         {
             OnPlayerDied?.Invoke();
+            Destroy(mob.gameObject);
         }
     }
 
     public void SpawnMobAtPlayer()
     {
-        SpawnMobAt(MobType.Player, _playerMovement.Pos + _offsets[Spawned]);
+        SpawnMobAt(MobType.Player, _playerMovement.Pos + _offsets[GetMobCount(MobType.Player)]);
     }
 
-    public void SpawnMobAt(MobType type, Vector3 pos)
+    public Mob SpawnMobAt(MobType type, Vector3 pos)
     {
         var prefab = MobPrefab;
         if (type == MobType.Enemy)
             prefab = MobEnemyPrefab;
 
         var mobGo = Instantiate(prefab, pos, Quaternion.identity, transform);
-        mobGo.GetComponent<Mob>().Type = type;
-        Mobs.Add(mobGo.GetComponent<Mob>());
+        var mob = mobGo.GetComponent<Mob>();
+        mob.Type = type;
+        _mobs[(int)type].Add(mob);
+        return mob;
     }
 
     public void DespawnRandomPlayerMob()
     {
-        int index = UnityEngine.Random.Range(0, Mobs.Count);
-        Destroy(Mobs[index].gameObject);
-        Mobs.RemoveAt(index);
+        int typeIndex = (int)MobType.Player;
+        if (_mobs[typeIndex].Count == 0)
+        {
+            OnPlayerDied?.Invoke();
+            return;
+        }
+        int index = UnityEngine.Random.Range(0, _mobs[typeIndex].Count);
+        Destroy(_mobs[typeIndex][index].gameObject);
+        _mobs[typeIndex].RemoveAt(index);
     }
 
     public void MoveMobs(Vector3 delta)
     {
-        for (int i = 0; i < Mobs.Count; i++)
+        int typeIndex = (int)MobType.Player;
+        for (int i = 0; i < _mobs[typeIndex].Count; i++)
         {
-            var mob = Mobs[i];
+            var mob = _mobs[typeIndex][i];
             var mobPos = mob.Body.position;
             mobPos += delta;
             mob.Body.MovePosition(mobPos);
@@ -131,9 +161,10 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
 
     public void ApplyCohesionForce()
     {
-        for (int i = 0; i < Mobs.Count; i++)
+        int typeIndex = (int)MobType.Player;
+        for (int i = 0; i < _mobs[typeIndex].Count; i++)
         {
-            var mob = Mobs[i];
+            var mob = _mobs[typeIndex][i];
             if (mob.Type != MobType.Player)
                 continue;
             var toPlayer = _playerMovement.Pos - mob.Body.position;
@@ -150,13 +181,25 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
 
     public void ApplyEncounterForce(Vector3 battlefieldPos)
     {
-        for (int i = 0; i < Mobs.Count; i++)
+        for (int y = 0; y < _mobTypesCount; y++)
         {
-            var mob = Mobs[i];
-            var toBattlefield = battlefieldPos - mob.Body.position;
-            mob.Body.AddForce(toBattlefield.normalized * toBattlefield.sqrMagnitude * MobEncounterForce, ForceMode.VelocityChange);
-            mob.Body.velocity = Vector3.ClampMagnitude(mob.Body.velocity, MobMaxSpeed);
+            for (int i = 0; i < _mobs[y].Count; i++)
+            {
+                var mob = _mobs[y][i];
+                var toBattlefield = battlefieldPos - mob.Body.position;
+                var force = toBattlefield.normalized * MobEncounterForce;
+                mob.Body.AddForce(force, ForceMode.VelocityChange);
+                mob.Body.velocity = Vector3.ClampMagnitude(mob.Body.velocity, MobMaxSpeed);
+            }
         }
+    }
+
+    public void ApplyEncounterForceToPlayer(Vector3 battlefieldPos)
+    {
+        var body = _playerMovement.Body;
+        var toBattlefield = battlefieldPos - body.position;
+        body.AddForce(toBattlefield.normalized * toBattlefield.sqrMagnitude * MobEncounterForce, ForceMode.VelocityChange);
+        body.velocity = Vector3.ClampMagnitude(body.velocity, MobMaxSpeed);
     }
 
     #region Formation Positions

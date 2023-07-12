@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class MobEncounter : MonoBehaviour
@@ -8,14 +9,28 @@ public class MobEncounter : MonoBehaviour
     [Header("Refs")]
     [SerializeField] Transform SpawnPoint;
 
+    List<Mob> _mobs;
+
     void Start()
     {
+        _mobs = new List<Mob>();
+
         var mobControl = ServiceLocator.Instance.GetService<IPlayerMobControl>();
         for (int i = 0; i < EnemyMobCount; i++)
         {
             var spawnTranslation = Random.insideUnitCircle;
             var spawnTranslation3d = new Vector3(spawnTranslation.x, 0f, spawnTranslation.y);
-            mobControl.SpawnMobAt(MobType.Enemy, SpawnPoint.position + spawnTranslation3d);
+            _mobs.Add(mobControl.SpawnMobAt(MobType.Enemy, SpawnPoint.position + spawnTranslation3d));
+        }
+    }
+
+    void FixedUpdate()
+    {
+        for (int i = 0; i < _mobs.Count; i++)
+        {
+            var mob = _mobs[i];
+            var toSpawnPoint = SpawnPoint.position - mob.Body.position;
+            mob.Body.AddForce(toSpawnPoint, ForceMode.VelocityChange);
         }
     }
 
@@ -26,7 +41,8 @@ public class MobEncounter : MonoBehaviour
             ServiceLocator.Instance.GetService<IGameController>()
                 .RaiseEvent(new MobEncounterEvent()
                 {
-                    Pos = transform.position
+                    Pos = SpawnPoint.position,
+                    EnemiesCount = EnemyMobCount
                 });
 
             this.enabled = false;

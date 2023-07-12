@@ -3,12 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public enum GameState
 {
     InMenu,
-    // GameStart, //If we want to have count down
+    GameStart,
     GameMoving,
     GameEncounter,
     GameOver
@@ -52,6 +53,25 @@ public class InMenuState : GameStateBase
 
     public void OnStartGameButtonClicked()
     {
+        _c.ChangeStateTo(GameState.GameStart);
+    }
+}
+
+public class GameStartState : GameStateBase
+{
+    protected IPlayerMobControl _mobControl;
+
+    public GameStartState(GameController controller) : base(controller)
+    {
+        _mobControl = ServiceLocator.Instance.GetService<IPlayerMobControl>();
+    }
+
+    public override void Enter()
+    {
+        base.Enter();
+
+        _mobControl.SpawnInitial();
+
         _c.ChangeStateTo(GameState.GameMoving);
     }
 }
@@ -59,32 +79,34 @@ public class InMenuState : GameStateBase
 public abstract class UpdateGameUIState : GameStateBase
 {
     protected IPlayerMobControl _mobControl;
+    protected IPlayerMovement _playerMovement;
 
     public UpdateGameUIState(GameController controller) : base(controller)
     {
         _mobControl = ServiceLocator.Instance.GetService<IPlayerMobControl>();
+        _playerMovement = ServiceLocator.Instance.GetService<IPlayerMovement>();
     }
 
     public override void Tick(float deltaTime)
     {
         base.Tick(deltaTime);
 
-        _c.SpawnCountText.text = _mobControl.Spawned.ToString();
+        _c.SpawnCountText.text = _mobControl.GetMobCount(MobType.Player).ToString();
     }
 }
 
 public class GameMovingState : UpdateGameUIState
 {
-    IPlayerMovement _playerMovement;
+    ILevelGenerator _levelGenerator;
 
     public GameMovingState(GameController controller) : base(controller)
     {
-        _playerMovement = ServiceLocator.Instance.GetService<IPlayerMovement>();
+        _levelGenerator = ServiceLocator.Instance.GetService<ILevelGenerator>();
     }
 
     public override void Enter()
     {
-        _mobControl.SpawnInitial();
+
         _c.InGameCanvas.gameObject.SetActive(true);
     }
 
@@ -93,11 +115,12 @@ public class GameMovingState : UpdateGameUIState
         base.Tick(deltaTime);
 
         _playerMovement.ReadGameInput();
+        _levelGenerator.OnPlayerMoved(deltaTime, _playerMovement.Pos);
     }
 
     public override void FixedTick(float fixedDeltaTime)
     {
-        float sideDelta = _playerMovement.MovePlayer(fixedDeltaTime, _mobControl.Spawned);
+        float sideDelta = _playerMovement.MovePlayer(fixedDeltaTime, _mobControl.GetMobCount(MobType.Player));
         _mobControl.ApplyCohesionForce();
         _mobControl.MoveMobs(new Vector3(sideDelta, 0f, 0f));
     }
@@ -125,11 +148,37 @@ public class GameEncounterState : UpdateGameUIState
     {
     }
 
+    public override void Enter()
+    {
+        base.Enter();
+        _mobControl.OnPlayerDied += OnPlayerDied;
+    }
+
+    public override void Exit()
+    {
+        base.Exit();
+        _mobControl.OnPlayerDied -= OnPlayerDied;
+    }
+
     public override void FixedTick(float fixedDeltaTime)
     {
-        if (_mobControl.Spawned > 1)
+        if (_mobControl.GetMobCount(MobType.Enemy) == 0)
         {
-            _mobControl.ApplyEncounterForce(_battlefieldPos);
+            _c.ChangeStateTo(GameState.GameMoving);
+            return;
+        }
+
+        int playerMobCount = _mobControl.GetMobCount(MobType.Player);
+        _mobControl.ApplyEncounterForce(_battlefieldPos);
+        if (playerMobCount > 0)
+        {
+            var pos = _playerMovement.Body.position;
+            pos.x = 0f;
+            _playerMovement.Body.AddForce((pos - _playerMovement.Body.position).normalized, ForceMode.VelocityChange);
+        }
+        else
+        {
+            _mobControl.ApplyEncounterForceToPlayer(_battlefieldPos);
         }
     }
 
@@ -141,17 +190,45 @@ public class GameEncounterState : UpdateGameUIState
         if (mobEncounterEvent != null)
         {
             _battlefieldPos = mobEncounterEvent.Pos;
-
-            
+            _enemyMobs = mobEncounterEvent.EnemiesCount;
         }
     }
 
+    private void OnPlayerDied()
+    {
+        _c.ChangeStateTo(GameState.GameOver);
+    }
+
     Vector3 _battlefieldPos;
+    int _enemyMobs;
+}
+
+public class GameOverState : GameStateBase
+{
+    public GameOverState(GameController controller) : base(controller)
+    {
+    }
+
+    public override void Enter()
+    {
+        base.Enter();
+
+        _c.GameOverCanvas.gameObject.SetActive(true);
+        _c.GameOverButton.onClick.AddListener(OnGameOverButtonClicked);
+        _c.MainMenuVirtualCam.SetActive(true);
+    }
+
+    private void OnGameOverButtonClicked()
+    {
+        SceneManager.LoadScene("Game");
+    }
 }
 
 public abstract class GameEvent { }
 public class MobEncounterEvent : GameEvent
 {
+    public int EnemiesCount { get; set; }
+
     public Vector3 Pos { get; set; }
 }
 
@@ -169,9 +246,15 @@ public class GameController : MonoBehaviour, IGameController
     public Canvas InGameCanvas;
     public GameObject MainMenuVirtualCam;
     public TextMeshProUGUI SpawnCountText;
+    public Canvas GameOverCanvas;
+    public Button GameOverButton;
 
     GameStateBase _currentState;
     Dictionary<GameState, GameStateBase> _states;
+
+    [Header("Debug")]
+    [ReadOnly]
+    [SerializeField] string _currentStateName;
 
     void Awake()
     {
@@ -185,8 +268,10 @@ public class GameController : MonoBehaviour, IGameController
         _states = new Dictionary<GameState, GameStateBase>()
         {
             { GameState.InMenu, new InMenuState(this) },
-            { GameState.GameMoving, new GameMovingState(this)},
-            { GameState.GameEncounter, new GameEncounterState(this)},
+            { GameState.GameStart, new GameStartState(this) },
+            { GameState.GameMoving, new GameMovingState(this) },
+            { GameState.GameEncounter, new GameEncounterState(this) },
+            { GameState.GameOver, new GameOverState(this) }
         };
 
         ChangeStateTo(GameState.InMenu);
@@ -195,6 +280,7 @@ public class GameController : MonoBehaviour, IGameController
     public void Tick(float deltaTime)
     {
         _currentState?.Tick(deltaTime);
+        _currentStateName = _currentState.GetType().Name;
     }
 
     public void TickFixed(float fixedDeltaTime)

@@ -102,12 +102,12 @@ public class MobGate : MonoBehaviour
                 }
             case MobGateType.Multiply:
                 {
-                    mobDelta = _mobControl.Spawned * Value - _mobControl.Spawned;
+                    mobDelta = _mobControl.GetMobCount(MobType.Player) * Value - _mobControl.GetMobCount(MobType.Player);
                     break;
                 }
             case MobGateType.Divide:
                 {
-                    mobDelta = -_mobControl.Spawned / Value;
+                    mobDelta = -_mobControl.GetMobCount(MobType.Player) / Value;
                     break;
                 }
             default:
@@ -122,11 +122,6 @@ public class MobGate : MonoBehaviour
         {
             for (int i = 0; i < -mobDelta; i++)
             {
-                if (_mobControl.Spawned == 0)
-                {
-                    Debug.Log("GAME OVER!");
-                    break;
-                }
                 _mobControl.DespawnRandomPlayerMob();
             }
         }

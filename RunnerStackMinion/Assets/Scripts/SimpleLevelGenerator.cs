@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-public interface ILevelGenerator : IService, IInitializable, ITickable
+public interface ILevelGenerator : IService, IInitializable
 {
-
+    void OnPlayerMoved(float deltaTime, Vector3 playerPos);
 }
 
 public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
@@ -39,7 +38,6 @@ public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
     float[] _segmentRolls;
     float _spawnDistanceToMaintain;
     int _lastSpawnedSegmenet;
-    IPlayerMovement _playerMovement;
 
     void Awake()
     {
@@ -50,7 +48,6 @@ public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
 
     public void Init()
     {
-        _playerMovement = ServiceLocator.Instance.GetService<IPlayerMovement>();
 
         _numSpawned = 0;
         _spawnedUntil = 0f;
@@ -60,9 +57,8 @@ public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
         _spawnDistanceToMaintain = _spawnedUntil;
     }
 
-    public void Tick(float deltaTime)
+    public void OnPlayerMoved(float deltaTime, Vector3 playerPos)
     {
-        var playerPos = _playerMovement.Pos;
         if (playerPos.z > (_spawnedUntil - _spawnDistanceToMaintain))
         {
             SpawnSegment();
