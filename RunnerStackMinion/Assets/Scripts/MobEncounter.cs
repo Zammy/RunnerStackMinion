@@ -8,6 +8,7 @@ public class MobEncounter : MonoBehaviour
 
     [Header("Refs")]
     [SerializeField] Transform SpawnPoint;
+    [SerializeField] Transform BattlefieldPoint;
 
     List<Mob> _mobs;
 
@@ -41,7 +42,7 @@ public class MobEncounter : MonoBehaviour
             ServiceLocator.Instance.GetService<IGameController>()
                 .RaiseEvent(new MobEncounterEvent()
                 {
-                    Pos = SpawnPoint.position,
+                    Pos = BattlefieldPoint.position,
                     EnemiesCount = EnemyMobCount
                 });
 

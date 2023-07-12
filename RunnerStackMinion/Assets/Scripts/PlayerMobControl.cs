@@ -86,26 +86,18 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
         }
     }
 
-    // static Dictionary<int, bool> _ids = new Dictionary<int, bool>();
-
     public void DespawnMob(Mob mob)
     {
-        // int id = mob.GetInstanceID();
-        // if (_ids.ContainsKey(id))
-        //     Debug.LogError("Has the same key! " + id);
-        // _ids.Add(id, true);
-
-        for (int y = 0; y < _mobTypesCount; y++)
+        int typeIndex = (int)mob.Type;
+        // Debug.Log($"Removing {mob._id} of {typeIndex}"); 
+        for (int i = 0; i < _mobs[typeIndex].Count; i++)
         {
-            for (int i = 0; i < _mobs[y].Count; i++)
+            var otherMob = _mobs[typeIndex][i];
+            if (mob == otherMob)
             {
-                var otherMob = _mobs[y][i];
-                if (mob == otherMob)
-                {
-                    _mobs[y].RemoveAt(i);
-                    Destroy(otherMob.gameObject);
-                    break;
-                }
+                _mobs[typeIndex].RemoveAt(i);
+                Destroy(otherMob.gameObject);
+                return;
             }
         }
 
@@ -113,7 +105,10 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
         {
             OnPlayerDied?.Invoke();
             Destroy(mob.gameObject);
+            return;
         }
+
+        throw new UnityException("Should not happen!");
     }
 
     public void SpawnMobAtPlayer()
@@ -187,7 +182,9 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
             {
                 var mob = _mobs[y][i];
                 var toBattlefield = battlefieldPos - mob.Body.position;
-                var force = toBattlefield.normalized * MobEncounterForce;
+                float distance = toBattlefield.magnitude;
+                distance = Mathf.Max(1f, distance);
+                var force = toBattlefield.normalized * distance * MobEncounterForce;
                 mob.Body.AddForce(force, ForceMode.VelocityChange);
                 mob.Body.velocity = Vector3.ClampMagnitude(mob.Body.velocity, MobMaxSpeed);
             }
@@ -198,8 +195,7 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
     {
         var body = _playerMovement.Body;
         var toBattlefield = battlefieldPos - body.position;
-        body.AddForce(toBattlefield.normalized * toBattlefield.sqrMagnitude * MobEncounterForce, ForceMode.VelocityChange);
-        body.velocity = Vector3.ClampMagnitude(body.velocity, MobMaxSpeed);
+        body.AddForce(toBattlefield.normalized * MobEncounterForce * 2f, ForceMode.VelocityChange);
     }
 
     #region Formation Positions

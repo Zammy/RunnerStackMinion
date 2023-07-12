@@ -174,7 +174,7 @@ public class GameEncounterState : UpdateGameUIState
         {
             var pos = _playerMovement.Body.position;
             pos.x = 0f;
-            _playerMovement.Body.AddForce((pos - _playerMovement.Body.position).normalized, ForceMode.VelocityChange);
+            _playerMovement.Body.AddForce((pos - _playerMovement.Body.position) * .25f, ForceMode.VelocityChange);
         }
         else
         {

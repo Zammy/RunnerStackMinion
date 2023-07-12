@@ -2599,7 +2599,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1777068597702664397, guid: 2f8e24ec6f798a34787b3f40c5c41453, type: 3}
       propertyPath: SpawnOnStartup
-      value: 4
+      value: 49
+      objectReference: {fileID: 0}
+    - target: {fileID: 1777068597702664397, guid: 2f8e24ec6f798a34787b3f40c5c41453, type: 3}
+      propertyPath: MobEncounterForce
+      value: 0.125
       objectReference: {fileID: 0}
     - target: {fileID: 4287503832450250571, guid: 2f8e24ec6f798a34787b3f40c5c41453, type: 3}
       propertyPath: m_Name

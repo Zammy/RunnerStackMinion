@@ -5,20 +5,31 @@ public class Mob : MonoBehaviour
     public MobType Type;
     public Rigidbody Body;
 
-    private bool _dead;
+    public bool IsDead { get; set; }
+    // public int _id = 0;
+    // static int idSeed = 0;
+
+    // void Start()
+    // {
+    //     _id = idSeed++;
+    // }
 
     void OnCollisionEnter(Collision other)
     {
-        //TODO: still having issues with mobs killing more than one
-        if (_dead) return; 
+        if (IsDead)
+            return;
 
         var otherMob = other.collider.GetComponentInParent<Mob>();
-        if (otherMob != null && Type != otherMob.Type)
+        if (otherMob == null || otherMob.IsDead)
+            return;
+
+        if (Type != otherMob.Type)
         {
             var mobControl = ServiceLocator.Instance.GetService<IPlayerMobControl>();
             mobControl.DespawnMob(this);
-
-            _dead = true;
+            mobControl.DespawnMob(otherMob);
+            IsDead = true;
+            otherMob.IsDead = true;
         }
     }
 }
