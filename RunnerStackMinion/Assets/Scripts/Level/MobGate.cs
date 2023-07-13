@@ -29,15 +29,14 @@ public class MobGate : MonoBehaviour
 
     [Header("Debug")]
     public bool Triggered;
-    WaitForSeconds _delay;
-
-    public UnityEvent OnDoorTriggered;
 
     IPlayerMobControl _mobControl;
+    Material _normalMaterial;
 
     void Start()
     {
         _mobControl = ServiceLocator.Instance.GetService<IPlayerMobControl>();
+        _normalMaterial = GetComponentInChildren<Renderer>().material;
 
         UpdateUI();
     }
@@ -49,11 +48,16 @@ public class MobGate : MonoBehaviour
             Triggered = true;
             ConnectedGate.Triggered = true;
 
-            OnDoorTriggered?.Invoke();
             GetComponentInChildren<Renderer>().material = TriggerMaterial;
 
             Execute();
         }
+    }
+
+    public void Reset()
+    {
+        Triggered = false;
+        GetComponentInChildren<Renderer>().material = _normalMaterial;
     }
 
     void UpdateUI()

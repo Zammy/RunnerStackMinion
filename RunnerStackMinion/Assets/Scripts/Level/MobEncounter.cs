@@ -12,17 +12,9 @@ public class MobEncounter : MonoBehaviour
 
     List<Mob> _mobs;
 
-    void Start()
+    void Awake()
     {
         _mobs = new List<Mob>();
-
-        var mobControl = ServiceLocator.Instance.GetService<IPlayerMobControl>();
-        for (int i = 0; i < EnemyMobCount; i++)
-        {
-            var spawnTranslation = Random.insideUnitCircle;
-            var spawnTranslation3d = new Vector3(spawnTranslation.x, 0f, spawnTranslation.y);
-            _mobs.Add(mobControl.SpawnMobAt(MobType.Enemy, SpawnPoint.position + spawnTranslation3d));
-        }
     }
 
     void FixedUpdate()
@@ -32,6 +24,19 @@ public class MobEncounter : MonoBehaviour
             var mob = _mobs[i];
             var toSpawnPoint = SpawnPoint.position - mob.Body.position;
             mob.Body.AddForce(toSpawnPoint, ForceMode.VelocityChange);
+        }
+    }
+
+    public void SpawnMobs()
+    {
+        _mobs.Clear();
+        
+        var mobControl = ServiceLocator.Instance.GetService<IPlayerMobControl>();
+        for (int i = 0; i < EnemyMobCount; i++)
+        {
+            var spawnTranslation = Random.insideUnitCircle;
+            var spawnTranslation3d = new Vector3(spawnTranslation.x, 0f, spawnTranslation.y);
+            _mobs.Add(mobControl.SpawnMobAt(MobType.Enemy, SpawnPoint.position + spawnTranslation3d));
         }
     }
 

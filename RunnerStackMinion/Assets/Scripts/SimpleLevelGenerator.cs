@@ -46,7 +46,22 @@ public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
         if (levelIndex >= transform.childCount)
             return false;
 
-        transform.GetChild(levelIndex).gameObject.SetActive(true);
+        var levelTrans = transform.GetChild(levelIndex);
+        levelTrans.gameObject.SetActive(true);
+        for (int i = 0; i < levelTrans.childCount; i++)
+        {
+            var segment = levelTrans.GetChild(i);
+            var gates = segment.GetComponentsInChildren<MobGate>();
+            for (int y = 0; y < gates.Length; y++)
+            {
+                gates[y].Reset();
+            }
+            var mobEncounter = segment.GetComponentInChildren<MobEncounter>();
+            if (mobEncounter)
+            {
+                mobEncounter.SpawnMobs();
+            }
+        }
         return true;
     }
 

@@ -58,7 +58,6 @@ public class PlayerMovement : MonoBehaviour, IPlayerMovement
 #if UNITY_ANDROID && !UNITY_EDITOR
                 pixelsMargin = InputMarginDevce * Screen.dpi;
 #endif
-                Debug.Log("pixelsMargin " + pixelsMargin);
                 float normalizedTouchDelta = touchDelta / (_screenWidth - pixelsMargin);
                 float deltaX = normalizedTouchDelta * LevelWidth;
                 _sideDelta = deltaX;
