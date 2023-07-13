@@ -52,7 +52,11 @@ public class InMenuState : GameStateBase
         _c.StartGameButton.onClick.AddListener(OnStartGameButtonClicked);
 
         _player.Body.position = Vector3.zero;
-        _levelGenerator.LoadLevel(_controller.CurrentLevel);
+        if (!_levelGenerator.LoadLevel(_controller.CurrentLevel))
+        {
+            _controller.CurrentLevel = 0;
+            _levelGenerator.LoadLevel(0);
+        }
     }
 
     public override void Exit()

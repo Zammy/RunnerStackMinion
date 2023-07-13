@@ -12,7 +12,7 @@ public class LevelSetting
 
 public interface ILevelGenerator : IService, IInitializable
 {
-    void LoadLevel(int levelIndex);
+    bool LoadLevel(int levelIndex);
     LevelSetting GetLevelSetting(int levelIndex);
 }
 
@@ -22,7 +22,6 @@ public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
     public struct SegmentSetting
     {
         public GameObject Prefab;
-        public float SegmentSize; //TODO: remove
     }
 
     [Header("Settings")]
@@ -40,11 +39,15 @@ public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
         DisableLevels();
     }
 
-    public void LoadLevel(int levelIndex)
+    public bool LoadLevel(int levelIndex)
     {
-        //TODO return false if no next level
         DisableLevels();
+
+        if (levelIndex >= transform.childCount)
+            return false;
+
         transform.GetChild(levelIndex).gameObject.SetActive(true);
+        return true;
     }
 
     public LevelSetting GetLevelSetting(int levelIndex)
@@ -62,24 +65,6 @@ public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
     }
 
 #if UNITY_EDITOR
-    [ContextMenu("CalculateSizes")]
-    public void CalculateSizes()
-    {
-        for (int i = 0; i < Segments.Length; i++)
-        {
-            if (!Segments[i].Prefab)
-                continue;
-            var floor = Segments[i].Prefab.transform.Find("Floor");
-            if (!floor)
-            {
-                Debug.LogError($"{Segments[i].Prefab.name} has no Floor!");
-                continue;
-            }
-            Segments[i].SegmentSize = floor.transform.localScale.z;
-        }
-        EditorUtility.SetDirty(gameObject);
-    }
-
     public void AddSegmentIndexToLevel(int segmentIndex, int levelIndex)
     {
         Transform levelTrans;
