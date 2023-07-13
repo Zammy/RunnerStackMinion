@@ -134,20 +134,13 @@ public class MobGate : MonoBehaviour
 
     IEnumerator DoSpawnMobs(int spawnAmount)
     {
-        float spawnRate = (float)spawnAmount / TotalSpawnTime;
-        float timeAccumulator = 0f;
+        var wait = new WaitForSeconds(.15f);
         while (spawnAmount > 0)
         {
-            yield return null;
+            yield return wait;
 
-            timeAccumulator += Time.deltaTime;
-            int spawnThisFrame = Mathf.RoundToInt(spawnRate * timeAccumulator);
-            for (int i = 0; i < spawnThisFrame && spawnAmount > 0; i++)
-            {
-                _mobControl.SpawnMobAt(MobType.Player, SpawnPoint.position);
-                spawnAmount--;
-                timeAccumulator = 0f;
-            }
+            _mobControl.SpawnMobAt(MobType.Player, SpawnPoint.position);
+            spawnAmount--;
         }
     }
 }

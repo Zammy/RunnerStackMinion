@@ -37,9 +37,9 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
     [SerializeField] int SpawnOnStartup = 10;
 
     public event Action OnPlayerDied;
-    // public event Action<Mob> OnDespawned;
 
     IPlayerMovement _playerMovement;
+    ISoundController _soundController;
     List<Mob>[] _mobs;
     int _mobTypesCount;
 
@@ -50,14 +50,15 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
 
     public void Init()
     {
+        _playerMovement = ServiceLocator.Instance.GetService<IPlayerMovement>();
+        _soundController = ServiceLocator.Instance.GetService<ISoundController>();
+
         _mobTypesCount = Enum.GetNames(typeof(MobType)).Length;
         _mobs = new List<Mob>[_mobTypesCount];
         for (int i = 0; i < _mobTypesCount; i++)
         {
             _mobs[i] = new List<Mob>();
         }
-
-        _playerMovement = ServiceLocator.Instance.GetService<IPlayerMovement>();
     }
 
     public int GetMobCount(MobType type)
@@ -86,6 +87,8 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
 
     public void DespawnMob(Mob mob)
     {
+        _soundController.PlaySound(SoundType.Despawn);
+
         int typeIndex = (int)mob.Type;
         for (int i = 0; i < _mobs[typeIndex].Count; i++)
         {
@@ -114,6 +117,8 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
 
     public Mob SpawnMobAt(MobType type, Vector3 pos)
     {
+        _soundController.PlaySound(SoundType.Spawn);
+
         var prefab = MobPrefab;
         if (type == MobType.Enemy)
             prefab = MobEnemyPrefab;

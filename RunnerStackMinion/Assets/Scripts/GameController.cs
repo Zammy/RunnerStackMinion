@@ -296,6 +296,7 @@ public class LevelFinishedState : GameStateBase
     IPlayerMobControl _mobControl;
     IPlayerMovement _player;
     IGameController _controller;
+    ISoundController _soundController;
 
     Coroutine _scoringCoroutine;
     bool _speedup;
@@ -306,11 +307,14 @@ public class LevelFinishedState : GameStateBase
         _mobControl = ServiceLocator.Instance.GetService<IPlayerMobControl>();
         _player = ServiceLocator.Instance.GetService<IPlayerMovement>();
         _controller = ServiceLocator.Instance.GetService<IGameController>();
+        _soundController = ServiceLocator.Instance.GetService<ISoundController>();
     }
 
     public override void Enter()
     {
         base.Enter();
+
+        _soundController.PlaySound(SoundType.Finish);
 
         _speedup = false;
         _c.MainMenuVirtualCam.SetActive(true);
