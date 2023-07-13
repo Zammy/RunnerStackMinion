@@ -4,9 +4,16 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
+[System.Serializable]
+public class LevelSetting
+{
+    public int[] StarsScores;
+}
+
 public interface ILevelGenerator : IService, IInitializable
 {
-    void OnPlayerMoved(float deltaTime, Vector3 playerPos);
+    void LoadLevel(int levelIndex);
+    LevelSetting GetLevelSetting(int levelIndex);
 }
 
 public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
@@ -15,116 +22,43 @@ public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
     public struct SegmentSetting
     {
         public GameObject Prefab;
-        public float SpawnWeight;
-        public float SegmentSize;
+        public float SegmentSize; //TODO: remove
     }
 
     [Header("Settings")]
-    [SerializeField] SegmentSetting[] Segments;
-    [SerializeField] float DecreaseWeightOnRecentlySpawnedBy = 0.25f;
-    [SerializeField] int SegmentsToCreate = 20;
-    [SerializeField] float DespawnSegmentsAfter = 50f;
+    public SegmentSetting[] Segments;
 
-    readonly Queue<GameObject> _spawnedSegments = new Queue<GameObject>();
-
-    [Header("Debug")]
-    [ReadOnly]
-    [SerializeField]
-    int _numSpawned;
-
-    [ReadOnly]
-    [SerializeField]
-    float _spawnedUntil;
-    float[] _segmentRolls;
-    float _spawnDistanceToMaintain;
-    int _lastSpawnedSegmenet;
+    public LevelSetting[] Levels;
 
     void Awake()
     {
         ServiceLocator.Instance.RegisterService(this);
-
-        _segmentRolls = new float[Segments.Length];
     }
 
     public void Init()
     {
-
-        _numSpawned = 0;
-        _spawnedUntil = 0f;
-
-        SpawnLevelStatic();
-
-        _spawnDistanceToMaintain = _spawnedUntil;
+        DisableLevels();
     }
 
-    public void OnPlayerMoved(float deltaTime, Vector3 playerPos)
+    public void LoadLevel(int levelIndex)
     {
-        if (playerPos.z > (_spawnedUntil - _spawnDistanceToMaintain))
-        {
-            SpawnSegment();
-        }
-        var oldestSegment = _spawnedSegments.Peek();
-        if (playerPos.z - oldestSegment.transform.position.z > DespawnSegmentsAfter)
-        {
-            DespawnSegment(_spawnedSegments.Dequeue());
-        }
+        //TODO return false if no next level
+        DisableLevels();
+        transform.GetChild(levelIndex).gameObject.SetActive(true);
     }
 
-    [ContextMenu("SpawnLevelStatic")]
-    public void SpawnLevelStatic()
+    public LevelSetting GetLevelSetting(int levelIndex)
     {
-        for (int i = 0; i < SegmentsToCreate; i++)
-        {
-            if (i < 2) //first two segments to be base
-                SpawnSegment(0);
-            else if (i == 2)
-                SpawnSegment(5);
-            else
-                SpawnSegment();
-        }
+        return Levels[levelIndex];
     }
 
-    void SpawnSegment(int segmentIndex = -1)
+    private void DisableLevels()
     {
-        if (segmentIndex == -1)
-            segmentIndex = PickSegmentToSpawn();
-        var segment = Segments[segmentIndex];
-        var pos = transform.position;
-        pos.z += _spawnedUntil;
-        var segmentGo = Instantiate(segment.Prefab, pos, Quaternion.identity, transform);
-        if (Mathf.Approximately(segment.SegmentSize, 0f))
+        for (int i = 0; i < transform.childCount; i++)
         {
-            Debug.LogError($"Segment {segmentGo.name} without size!");
-            _spawnedUntil += 20f;
+            var level = transform.GetChild(i);
+            level.gameObject.SetActive(false);
         }
-        else
-            _spawnedUntil += segment.SegmentSize;
-        _spawnedSegments.Enqueue(segmentGo);
-        _numSpawned++;
-        _lastSpawnedSegmenet = segmentIndex;
-    }
-
-    int PickSegmentToSpawn()
-    {
-        float best = 0f;
-        int index = 0;
-        for (int i = 0; i < Segments.Length; i++)
-        {
-            float chance = Segments[i].SpawnWeight + Random.Range(0f, 1f);
-            if (i == _lastSpawnedSegmenet)
-                chance -= DecreaseWeightOnRecentlySpawnedBy;
-            if (chance > best)
-            {
-                best = chance;
-                index = i;
-            }
-        }
-        return index;
-    }
-
-    void DespawnSegment(GameObject segment)
-    {
-        Destroy(segment);
     }
 
 #if UNITY_EDITOR
@@ -146,16 +80,43 @@ public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
         EditorUtility.SetDirty(gameObject);
     }
 
-    [ContextMenu("ClearSpawned")]
-    public void ClearSpawned()
+    public void AddSegmentIndexToLevel(int segmentIndex, int levelIndex)
     {
-        _numSpawned = 0;
-        _spawnedUntil = 0f;
-
-        while (_spawnedSegments.Count > 0)
+        Transform levelTrans;
+        if (transform.childCount <= levelIndex)
         {
-            DespawnSegment(_spawnedSegments.Dequeue());
+            var go = new GameObject();
+            go.transform.SetParent(this.transform);
+            go.transform.localPosition = Vector3.zero;
+            go.transform.localRotation = Quaternion.identity;
+            go.name = "Level " + (levelIndex + 1).ToString();
+            levelTrans = go.transform;
         }
+        else
+        {
+            levelTrans = transform.GetChild(levelIndex);
+        }
+
+        float spawnPos = 0f;
+        for (int i = 0; i < levelTrans.childCount; i++)
+        {
+            var segmentTrans = levelTrans.GetChild(i);
+            spawnPos += CalculateSegmentSize(levelTrans.GetChild(i));
+        }
+
+        var segment = Segments[segmentIndex];
+        Instantiate(segment.Prefab, new Vector3(0f, 0f, spawnPos), Quaternion.identity, levelTrans);
+    }
+
+    float CalculateSegmentSize(Transform segment)
+    {
+        var floor = segment.Find("Floor");
+        if (!floor)
+        {
+            Debug.LogError($"{segment.name} has no Floor!");
+            return 20f;
+        }
+        return floor.transform.localScale.z;
     }
 #endif
 }

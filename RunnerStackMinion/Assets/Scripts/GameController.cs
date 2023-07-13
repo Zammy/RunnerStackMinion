@@ -12,7 +12,8 @@ public enum GameState
     GameStart,
     GameMoving,
     GameEncounter,
-    GameOver
+    GameOver,
+    LevelFinished,
 }
 
 public abstract class GameStateBase
@@ -33,8 +34,15 @@ public abstract class GameStateBase
 
 public class InMenuState : GameStateBase
 {
+    IGameController _controller;
+    ILevelGenerator _levelGenerator;
+    IPlayerMovement _player;
+
     public InMenuState(GameController controller) : base(controller)
     {
+        _controller = ServiceLocator.Instance.GetService<IGameController>();
+        _levelGenerator = ServiceLocator.Instance.GetService<ILevelGenerator>();
+        _player = ServiceLocator.Instance.GetService<IPlayerMovement>();
     }
 
     public override void Enter()
@@ -42,6 +50,9 @@ public class InMenuState : GameStateBase
         _c.MainMenuCanvas.gameObject.SetActive(true);
         _c.MainMenuVirtualCam.gameObject.SetActive(true);
         _c.StartGameButton.onClick.AddListener(OnStartGameButtonClicked);
+
+        _player.Body.position = Vector3.zero;
+        _levelGenerator.LoadLevel(_controller.CurrentLevel);
     }
 
     public override void Exit()
@@ -59,7 +70,7 @@ public class InMenuState : GameStateBase
 
 public class GameStartState : GameStateBase
 {
-    protected IPlayerMobControl _mobControl;
+    IPlayerMobControl _mobControl;
 
     public GameStartState(GameController controller) : base(controller)
     {
@@ -92,6 +103,7 @@ public abstract class UpdateGameUIState : GameStateBase
         base.Tick(deltaTime);
 
         _c.SpawnCountText.text = _mobControl.GetMobCount(MobType.Player).ToString();
+        _c.MetersPassedText.text = $"{Mathf.RoundToInt(_playerMovement.Pos.z)}m passed";
     }
 }
 
@@ -106,7 +118,6 @@ public class GameMovingState : UpdateGameUIState
 
     public override void Enter()
     {
-
         _c.InGameCanvas.gameObject.SetActive(true);
     }
 
@@ -115,7 +126,6 @@ public class GameMovingState : UpdateGameUIState
         base.Tick(deltaTime);
 
         _playerMovement.ReadGameInput();
-        _levelGenerator.OnPlayerMoved(deltaTime, _playerMovement.Pos);
     }
 
     public override void FixedTick(float fixedDeltaTime)
@@ -138,6 +148,11 @@ public class GameMovingState : UpdateGameUIState
         if (mobEncounterEvent != null)
         {
             _c.ChangeStateToAndRaise(GameState.GameEncounter, gameEvent);
+        }
+        var levelFinishedEvent = gameEvent as LevelFinishedEvent;
+        if (levelFinishedEvent != null)
+        {
+            _c.ChangeStateTo(GameState.LevelFinished);
         }
     }
 }
@@ -189,7 +204,7 @@ public class GameEncounterState : UpdateGameUIState
         var mobEncounterEvent = gameEvent as MobEncounterEvent;
         if (mobEncounterEvent != null)
         {
-            _battlefieldPos = mobEncounterEvent.Pos;
+            _battlefieldPos = mobEncounterEvent.BattlefieldPos;
             _enemyMobs = mobEncounterEvent.EnemiesCount;
         }
     }
@@ -214,13 +229,98 @@ public class GameOverState : GameStateBase
         base.Enter();
 
         _c.GameOverCanvas.gameObject.SetActive(true);
-        _c.GameOverButton.onClick.AddListener(OnGameOverButtonClicked);
+        _c.GameOverButton.onClick.AddListener(OnButtonClicked);
         _c.MainMenuVirtualCam.SetActive(true);
     }
 
-    private void OnGameOverButtonClicked()
+    private void OnButtonClicked()
     {
         SceneManager.LoadScene("Game");
+    }
+}
+
+public class LevelFinishedState : GameStateBase
+{
+    ILevelGenerator _levelGenerator;
+    IPlayerMobControl _mobControl;
+    IPlayerMovement _player;
+    IGameController _controller;
+
+    Coroutine _scoringCoroutine;
+
+    public LevelFinishedState(GameController controller) : base(controller)
+    {
+        _levelGenerator = ServiceLocator.Instance.GetService<ILevelGenerator>();
+        _mobControl = ServiceLocator.Instance.GetService<IPlayerMobControl>();
+        _player = ServiceLocator.Instance.GetService<IPlayerMovement>();
+        _controller = ServiceLocator.Instance.GetService<IGameController>();
+    }
+
+    public override void Enter()
+    {
+        base.Enter();
+
+        _c.LevelFinishedCanvas.gameObject.SetActive(true);
+        _c.LevelFinishedButton.onClick.AddListener(this.OnButtonClicked);
+
+        for (int i = 0; i < 3; i++)
+        {
+            _c.LevelFinishedStars[i].SetActive(false);
+        }
+
+        float metersPassed = _player.Pos.z;
+        int playerMobCount = _mobControl.GetMobCount(MobType.Player);
+        int[] stars = _levelGenerator.GetLevelSetting(_controller.CurrentLevel).StarsScores;
+        _scoringCoroutine = _c.StartCoroutine(DoScoring((int)metersPassed, playerMobCount, stars));
+    }
+
+    public override void Exit()
+    {
+        base.Exit();
+
+        _c.LevelFinishedCanvas.gameObject.SetActive(false);
+        _c.LevelFinishedButton.onClick.RemoveListener(this.OnButtonClicked);
+    }
+
+    private void OnButtonClicked()
+    {
+        if (_scoringCoroutine != null)
+            return;
+        _controller.CurrentLevel++;
+
+        _c.ChangeStateTo(GameState.InMenu);
+    }
+
+    IEnumerator DoScoring(int metersPassed, int mobsAlive, int[] starsScoring)
+    {
+        yield return new WaitForSeconds(1f);
+
+        _c.LevelFinishedDistance.text = $"{metersPassed} distance";
+
+        int totalScore = 0;
+        int mobsScored = 0;
+        while (mobsScored < mobsAlive)
+        {
+            mobsScored += 1;
+            _c.LevelFinishedMobsAlive.text = $"x {mobsScored} mobs";
+            _mobControl.DespawnRandomPlayerMob();
+            totalScore = (int)(mobsScored * metersPassed);
+            _c.LevelFinishedFinalScore.text = totalScore.ToString();
+            yield return new WaitForSeconds(.1f);
+        }
+
+        yield return new WaitForSeconds(1f);
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (totalScore > starsScoring[i])
+            {
+                _c.LevelFinishedStars[i].SetActive(true);
+            }
+            yield return new WaitForSeconds(.4f);
+        }
+
+        _scoringCoroutine = null;
     }
 }
 
@@ -228,12 +328,14 @@ public abstract class GameEvent { }
 public class MobEncounterEvent : GameEvent
 {
     public int EnemiesCount { get; set; }
-
-    public Vector3 Pos { get; set; }
+    public Vector3 BattlefieldPos { get; set; }
 }
+
+public class LevelFinishedEvent : GameEvent { }
 
 public interface IGameController : IService, IInitializable, ITickable, ITickableFixed
 {
+    int CurrentLevel { get; set; }
     void RaiseEvent(GameEvent gameEvent);
 }
 
@@ -243,11 +345,21 @@ public class GameController : MonoBehaviour, IGameController
     [Header("Refs")]
     public Canvas MainMenuCanvas;
     public Button StartGameButton;
-    public Canvas InGameCanvas;
     public GameObject MainMenuVirtualCam;
+
+    public Canvas InGameCanvas;
     public TextMeshProUGUI SpawnCountText;
+    public TextMeshProUGUI MetersPassedText;
+
     public Canvas GameOverCanvas;
     public Button GameOverButton;
+
+    public Canvas LevelFinishedCanvas;
+    public Button LevelFinishedButton;
+    public TextMeshProUGUI LevelFinishedDistance;
+    public TextMeshProUGUI LevelFinishedMobsAlive;
+    public TextMeshProUGUI LevelFinishedFinalScore;
+    public GameObject[] LevelFinishedStars;
 
     GameStateBase _currentState;
     Dictionary<GameState, GameStateBase> _states;
@@ -255,6 +367,8 @@ public class GameController : MonoBehaviour, IGameController
     [Header("Debug")]
     [ReadOnly]
     [SerializeField] string _currentStateName;
+
+    public int CurrentLevel { get; set; }
 
     void Awake()
     {
@@ -271,7 +385,8 @@ public class GameController : MonoBehaviour, IGameController
             { GameState.GameStart, new GameStartState(this) },
             { GameState.GameMoving, new GameMovingState(this) },
             { GameState.GameEncounter, new GameEncounterState(this) },
-            { GameState.GameOver, new GameOverState(this) }
+            { GameState.GameOver, new GameOverState(this) },
+            { GameState.LevelFinished, new LevelFinishedState(this) },
         };
 
         ChangeStateTo(GameState.InMenu);

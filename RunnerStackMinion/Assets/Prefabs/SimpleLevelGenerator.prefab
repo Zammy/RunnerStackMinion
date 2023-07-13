@@ -54,9 +54,6 @@ MonoBehaviour:
   - Prefab: {fileID: 7700631850692339928, guid: 8718b1da33cb2e5429945d9bb727db79, type: 3}
     SpawnWeight: 0.15
     SegmentSize: 40
-  - Prefab: {fileID: 4086556654267845096, guid: c37c783906971b844aa50817f644aa5a, type: 3}
-    SpawnWeight: 0.1
-    SegmentSize: 40
   - Prefab: {fileID: 6247545373154733749, guid: b7b7b3ed9e7711446967777cc17f9a91, type: 3}
     SpawnWeight: 0.2
     SegmentSize: 20
@@ -64,7 +61,7 @@ MonoBehaviour:
     SpawnWeight: 0.2
     SegmentSize: 60
   DecreaseWeightOnRecentlySpawnedBy: 0.25
-  SegmentsToCreate: 20
+  SegmentsToCreate: 3
   DespawnSegmentsAfter: 50
   _numSpawned: 0
   _spawnedUntil: 0

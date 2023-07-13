@@ -42,7 +42,7 @@ public class MobEncounter : MonoBehaviour
             ServiceLocator.Instance.GetService<IGameController>()
                 .RaiseEvent(new MobEncounterEvent()
                 {
-                    Pos = BattlefieldPoint.position,
+                    BattlefieldPos = BattlefieldPoint.position,
                     EnemiesCount = EnemyMobCount
                 });
 

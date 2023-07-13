@@ -129,10 +129,6 @@ public class MobGate : MonoBehaviour
 
     IEnumerator DoSpawnMobs(int spawnAmount)
     {
-        //TODO: should go to GameController
-
-        // PlayerMovement.I.Paused = true;
-
         float spawnRate = (float)spawnAmount / TotalSpawnTime;
         float timeAccumulator = 0f;
         while (spawnAmount > 0)
@@ -148,8 +144,5 @@ public class MobGate : MonoBehaviour
                 timeAccumulator = 0f;
             }
         }
-
-        // PlayerMovement.I.Paused = false;
     }
-
 }
