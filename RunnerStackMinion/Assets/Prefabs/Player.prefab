@@ -190,6 +190,7 @@ MonoBehaviour:
   LevelWidth: 19
   LevelWidthDecreasePerMob: 0.6
   InputMargin: 6
+  InputMarginDevce: 0.5
 --- !u!54 &2041722263721001525
 Rigidbody:
   m_ObjectHideFlags: 0

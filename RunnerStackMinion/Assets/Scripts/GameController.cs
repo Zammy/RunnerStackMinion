@@ -54,11 +54,7 @@ public class InMenuState : GameStateBase
         _c.StartGameButton.onClick.AddListener(OnStartGameButtonClicked);
 
         _player.Body.position = Vector3.zero;
-        if (!_levelGenerator.LoadLevel(_controller.CurrentLevel))
-        {
-            _controller.CurrentLevel = 0;
-            _levelGenerator.LoadLevel(0);
-        }
+        _c.StartCoroutine(LoadLevelWithDelay());
     }
 
     public override void Exit()
@@ -73,6 +69,19 @@ public class InMenuState : GameStateBase
     public void OnStartGameButtonClicked()
     {
         _c.ChangeStateTo(GameState.GameStart);
+    }
+
+    //For unknown reason if level is already visible does not render on my Android device
+    //Keeping it disabled and delaying with one frame fixes the problem, typical Unity stuff
+    IEnumerator LoadLevelWithDelay()
+    {
+        yield return null;
+
+        if (!_levelGenerator.LoadLevel(_controller.CurrentLevel))
+        {
+            _controller.CurrentLevel = 0;
+            _levelGenerator.LoadLevel(0);
+        }
     }
 }
 
@@ -90,6 +99,15 @@ public class GameStartState : GameStateBase
         base.Enter();
 
         _mobControl.SpawnInitial();
+
+
+        // var _levelGenerator = ServiceLocator.Instance.GetService<ILevelGenerator>();
+        // Debug.Log("Trying to load level");
+        // if (!_levelGenerator.LoadLevel(0))
+        // {
+        //     // _controller.CurrentLevel = 0;
+        //     // _levelGenerator.LoadLevel(0);
+        // }
 
         _c.ChangeStateTo(GameState.GameMoving);
     }

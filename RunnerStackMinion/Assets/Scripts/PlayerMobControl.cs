@@ -34,8 +34,6 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
     [SerializeField] float FormationForce = 1f;
     [SerializeField] float MobMaxSpeed = 1f;
     [SerializeField] float MobEncounterForce = 1f;
-
-    [Header("Debug")]
     [SerializeField] int SpawnOnStartup = 10;
 
     public event Action OnPlayerDied;

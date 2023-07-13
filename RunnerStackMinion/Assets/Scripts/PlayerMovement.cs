@@ -18,6 +18,7 @@ public class PlayerMovement : MonoBehaviour, IPlayerMovement
     [SerializeField] float LevelWidth = 20f;
     [SerializeField] float LevelWidthDecreasePerMob = .05f;
     [SerializeField] float InputMargin = 10f;
+    [SerializeField] float InputMarginDevce = 1f;
 
     public Vector3 Pos => transform.position;
     public Rigidbody Body => _rigidbody;
@@ -36,11 +37,11 @@ public class PlayerMovement : MonoBehaviour, IPlayerMovement
 
         _screenWidth = Screen.width;
         _halfLevelWidth = LevelWidth / 2f;
+        _rigidbody = GetComponent<Rigidbody>();
     }
 
     public void Init()
     {
-        _rigidbody = GetComponent<Rigidbody>();
     }
 
     public void ReadGameInput()
@@ -54,6 +55,10 @@ public class PlayerMovement : MonoBehaviour, IPlayerMovement
             {
                 float touchDelta = activeTouch.delta.x;
                 float pixelsMargin = InputMargin * Screen.dpi;
+#if UNITY_ANDROID && !UNITY_EDITOR
+                pixelsMargin = InputMarginDevce * Screen.dpi;
+#endif
+                Debug.Log("pixelsMargin " + pixelsMargin);
                 float normalizedTouchDelta = touchDelta / (_screenWidth - pixelsMargin);
                 float deltaX = normalizedTouchDelta * LevelWidth;
                 _sideDelta = deltaX;
