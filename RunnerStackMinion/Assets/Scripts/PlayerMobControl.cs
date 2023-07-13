@@ -103,7 +103,6 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
         if (mob.Body == _playerMovement.Body)
         {
             OnPlayerDied?.Invoke();
-            Destroy(mob.gameObject);
             return;
         }
 

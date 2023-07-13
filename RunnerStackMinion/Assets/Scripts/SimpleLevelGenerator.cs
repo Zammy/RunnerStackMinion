@@ -70,12 +70,12 @@ public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
         Transform levelTrans;
         if (transform.childCount <= levelIndex)
         {
-            var go = new GameObject();
-            go.transform.SetParent(this.transform);
-            go.transform.localPosition = Vector3.zero;
-            go.transform.localRotation = Quaternion.identity;
-            go.name = "Level " + (levelIndex + 1).ToString();
-            levelTrans = go.transform;
+            var lvlGo = new GameObject();
+            lvlGo.transform.SetParent(this.transform);
+            lvlGo.transform.localPosition = Vector3.zero;
+            lvlGo.transform.localRotation = Quaternion.identity;
+            lvlGo.name = "Level " + (levelIndex + 1).ToString();
+            levelTrans = lvlGo.transform;
         }
         else
         {
@@ -90,7 +90,9 @@ public class SimpleLevelGenerator : MonoBehaviour, ILevelGenerator
         }
 
         var segment = Segments[segmentIndex];
-        Instantiate(segment.Prefab, new Vector3(0f, 0f, spawnPos), Quaternion.identity, levelTrans);
+        var go = (GameObject)PrefabUtility.InstantiatePrefab(segment.Prefab, levelTrans);
+        go.transform.position = new Vector3(0f, 0f, spawnPos);
+        go.transform.localRotation = Quaternion.identity;
     }
 
     float CalculateSegmentSize(Transform segment)

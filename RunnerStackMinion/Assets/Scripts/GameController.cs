@@ -47,6 +47,8 @@ public class InMenuState : GameStateBase
 
     public override void Enter()
     {
+        base.Enter();
+
         _c.MainMenuCanvas.gameObject.SetActive(true);
         _c.MainMenuVirtualCam.gameObject.SetActive(true);
         _c.StartGameButton.onClick.AddListener(OnStartGameButtonClicked);
@@ -61,6 +63,8 @@ public class InMenuState : GameStateBase
 
     public override void Exit()
     {
+        base.Exit();
+
         _c.MainMenuCanvas.gameObject.SetActive(false);
         _c.MainMenuVirtualCam.gameObject.SetActive(false);
         _c.StartGameButton.onClick.RemoveListener(OnStartGameButtonClicked);
@@ -102,12 +106,32 @@ public abstract class UpdateGameUIState : GameStateBase
         _playerMovement = ServiceLocator.Instance.GetService<IPlayerMovement>();
     }
 
+    public override void Enter()
+    {
+        base.Enter();
+
+        _mobControl.OnPlayerDied += OnPlayerDied;
+    }
+
+    public override void Exit()
+    {
+        base.Exit();
+
+        _mobControl.OnPlayerDied -= OnPlayerDied;
+    }
+
     public override void Tick(float deltaTime)
     {
         base.Tick(deltaTime);
 
-        _c.SpawnCountText.text = _mobControl.GetMobCount(MobType.Player).ToString();
+        _c.SpawnCountText.text = (_mobControl.GetMobCount(MobType.Player) + 1).ToString();
         _c.MetersPassedText.text = $"{Mathf.RoundToInt(_playerMovement.Pos.z)}m passed";
+    }
+
+    private void OnPlayerDied()
+    {
+
+        _c.ChangeStateTo(GameState.GameOver);
     }
 }
 
@@ -122,6 +146,8 @@ public class GameMovingState : UpdateGameUIState
 
     public override void Enter()
     {
+        base.Enter();
+
         _c.InGameCanvas.gameObject.SetActive(true);
     }
 
@@ -134,6 +160,8 @@ public class GameMovingState : UpdateGameUIState
 
     public override void FixedTick(float fixedDeltaTime)
     {
+        base.FixedTick(fixedDeltaTime);
+
         float sideDelta = _playerMovement.MovePlayer(fixedDeltaTime, _mobControl.GetMobCount(MobType.Player));
         _mobControl.ApplyCohesionForce();
         _mobControl.MoveMobs(new Vector3(sideDelta, 0f, 0f));
@@ -141,6 +169,8 @@ public class GameMovingState : UpdateGameUIState
 
     public override void Exit()
     {
+        base.Exit();
+
         _c.InGameCanvas.gameObject.SetActive(false);
     }
 
@@ -167,20 +197,10 @@ public class GameEncounterState : UpdateGameUIState
     {
     }
 
-    public override void Enter()
-    {
-        base.Enter();
-        _mobControl.OnPlayerDied += OnPlayerDied;
-    }
-
-    public override void Exit()
-    {
-        base.Exit();
-        _mobControl.OnPlayerDied -= OnPlayerDied;
-    }
-
     public override void FixedTick(float fixedDeltaTime)
     {
+        base.FixedTick(fixedDeltaTime);
+
         if (_mobControl.GetMobCount(MobType.Enemy) == 0)
         {
             _c.ChangeStateTo(GameState.GameMoving);
@@ -213,19 +233,18 @@ public class GameEncounterState : UpdateGameUIState
         }
     }
 
-    private void OnPlayerDied()
-    {
-        _c.ChangeStateTo(GameState.GameOver);
-    }
-
     Vector3 _battlefieldPos;
     int _enemyMobs;
 }
 
 public class GameOverState : GameStateBase
 {
+    IGameController _controller;
+
+
     public GameOverState(GameController controller) : base(controller)
     {
+        _controller = ServiceLocator.Instance.GetService<IGameController>();
     }
 
     public override void Enter()
@@ -237,9 +256,19 @@ public class GameOverState : GameStateBase
         _c.MainMenuVirtualCam.SetActive(true);
     }
 
+    public override void Exit()
+    {
+        base.Exit();
+
+        _c.GameOverCanvas.gameObject.SetActive(false);
+        _c.GameOverButton.onClick.RemoveListener(OnButtonClicked);
+        _c.MainMenuVirtualCam.SetActive(false);
+    }
+
     private void OnButtonClicked()
     {
-        SceneManager.LoadScene("Game");
+        _controller.CurrentLevel = 0;
+        _c.ChangeStateTo(GameState.InMenu);
     }
 }
 
@@ -278,7 +307,7 @@ public class LevelFinishedState : GameStateBase
         float metersPassed = _player.Pos.z;
         int playerMobCount = _mobControl.GetMobCount(MobType.Player);
         int[] stars = _levelGenerator.GetLevelSetting(_controller.CurrentLevel).StarsScores;
-        _scoringCoroutine = _c.StartCoroutine(DoScoring((int)metersPassed, playerMobCount, stars));
+        _scoringCoroutine = _c.StartCoroutine(DoScoring((int)metersPassed, playerMobCount + 1, stars));
     }
 
     public override void Exit()

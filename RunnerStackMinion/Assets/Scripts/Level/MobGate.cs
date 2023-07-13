@@ -87,6 +87,7 @@ public class MobGate : MonoBehaviour
 
     private void Execute()
     {
+        int mobCount = _mobControl.GetMobCount(MobType.Player) + 1;
         int mobDelta = 0;
         switch (Type)
         {
@@ -102,12 +103,12 @@ public class MobGate : MonoBehaviour
                 }
             case MobGateType.Multiply:
                 {
-                    mobDelta = _mobControl.GetMobCount(MobType.Player) * Value - _mobControl.GetMobCount(MobType.Player);
+                    mobDelta = mobCount * Value - mobCount;
                     break;
                 }
             case MobGateType.Divide:
                 {
-                    mobDelta = -_mobControl.GetMobCount(MobType.Player) / Value;
+                    mobDelta = -mobCount / Value;
                     break;
                 }
             default:
