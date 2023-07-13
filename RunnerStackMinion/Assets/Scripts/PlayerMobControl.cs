@@ -89,7 +89,6 @@ public class PlayerMobControl : MonoBehaviour, IPlayerMobControl
     public void DespawnMob(Mob mob)
     {
         int typeIndex = (int)mob.Type;
-        // Debug.Log($"Removing {mob._id} of {typeIndex}"); 
         for (int i = 0; i < _mobs[typeIndex].Count; i++)
         {
             var otherMob = _mobs[typeIndex][i];
