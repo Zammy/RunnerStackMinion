@@ -251,6 +251,7 @@ public class LevelFinishedState : GameStateBase
     IGameController _controller;
 
     Coroutine _scoringCoroutine;
+    bool _speedup;
 
     public LevelFinishedState(GameController controller) : base(controller)
     {
@@ -264,6 +265,8 @@ public class LevelFinishedState : GameStateBase
     {
         base.Enter();
 
+        _speedup = false;
+        _c.MainMenuVirtualCam.SetActive(true);
         _c.LevelFinishedCanvas.gameObject.SetActive(true);
         _c.LevelFinishedButton.onClick.AddListener(this.OnButtonClicked);
 
@@ -282,6 +285,7 @@ public class LevelFinishedState : GameStateBase
     {
         base.Exit();
 
+        _c.MainMenuVirtualCam.SetActive(false);
         _c.LevelFinishedCanvas.gameObject.SetActive(false);
         _c.LevelFinishedButton.onClick.RemoveListener(this.OnButtonClicked);
     }
@@ -289,17 +293,21 @@ public class LevelFinishedState : GameStateBase
     private void OnButtonClicked()
     {
         if (_scoringCoroutine != null)
+        {
+            _speedup = true;
             return;
-        _controller.CurrentLevel++;
+        }
 
+        _controller.CurrentLevel++;
         _c.ChangeStateTo(GameState.InMenu);
     }
 
     IEnumerator DoScoring(int metersPassed, int mobsAlive, int[] starsScoring)
     {
-        yield return new WaitForSeconds(1f);
-
         _c.LevelFinishedDistance.text = $"{metersPassed} distance";
+        _c.LevelFinishedMobsAlive.text = $"x 0 mobs";
+
+        yield return new WaitForSeconds(1f);
 
         int totalScore = 0;
         int mobsScored = 0;
@@ -310,18 +318,25 @@ public class LevelFinishedState : GameStateBase
             _mobControl.DespawnRandomPlayerMob();
             totalScore = (int)(mobsScored * metersPassed);
             _c.LevelFinishedFinalScore.text = totalScore.ToString();
-            yield return new WaitForSeconds(.1f);
+            if (!_speedup)
+                yield return new WaitForSeconds(.05f);
         }
 
-        yield return new WaitForSeconds(1f);
+        if (!_speedup)
+            yield return new WaitForSeconds(1f);
 
         for (int i = 0; i < 3; i++)
         {
             if (totalScore > starsScoring[i])
             {
                 _c.LevelFinishedStars[i].SetActive(true);
+                if (!_speedup)
+                    yield return new WaitForSeconds(.4f);
             }
-            yield return new WaitForSeconds(.4f);
+            else
+            {
+                break;
+            }
         }
 
         _scoringCoroutine = null;
